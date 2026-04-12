@@ -37,6 +37,7 @@ dependencies:
   get: ^4.7.3
   http: ^1.6.0
   freezed: ^3.2.5
+  syncfusion_flutter_datepicker: ^31.1.19
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import 'package:mabar_slurd/res/assets.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
 import 'package:mabar_slurd/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/Detail/presentation/widgets/detail_page_widgets.dart';
+import 'package:mabar_slurd/src/feat/booking/presentation/views/pages/booking_page.dart';
 
 class DetailScreen extends StatelessWidget {
   const DetailScreen({super.key});
@@ -114,19 +115,7 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // ...List.generate(
-                  //   2,
-                  //   (index) => Wrap(
-                  //     direction: Axis.horizontal,
-                  //     children: [
-                  //       Container(
-                  //         width: double.infinity,
-                  //         height: 30,
-                  //         color: Colors.amberAccent,
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
+
                   Wrap(
                     alignment: WrapAlignment.start,
                     children: List.generate(
@@ -242,7 +231,15 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  const MabarButton(text: "Booking Sekarang"),
+                  MabarButton(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BookingPage(),
+                      ),
+                    ),
+                    text: "Booking Sekarang",
+                  ),
                 ],
               ),
             ),
