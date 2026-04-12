@@ -18,6 +18,7 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 15),
           child: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -34,7 +35,16 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 15),
                 const SearchGaming(),
-                const SizedBox(height: 15),
+                const SizedBox(height: 20),
+                const Text(
+                  "Cari Wilayah",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    color: CustomColors.mabarTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 const MapGaming(),
                 const SizedBox(height: 15),
                 ...List.generate(
