@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/res/assets.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
 import 'package:mabar_slurd/shared/components/image_card.dart';
-import 'package:mabar_slurd/src/feat/Detail/detail_screen.dart';
+import 'package:mabar_slurd/src/feat/Detail/presentation/views/pages/detail_screen.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/components/map_gaming.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/components/search_gaming.dart';
 
