@@ -4,6 +4,7 @@ import 'package:mabar_slurd/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/durasi.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/perangkat.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
+import 'package:mabar_slurd/src/feat/history/presentation/views/page/booking_history_page.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -377,7 +378,15 @@ class _BookingPageState extends State<BookingPage> {
                 ),
                 const SizedBox(height: 20),
 
-                MabarButton(onTap: () {}, text: 'Konfirmasi Booking'),
+                MabarButton(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BookingHistoryPage(),
+                    ),
+                  ),
+                  text: 'Konfirmasi Booking',
+                ),
                 const SizedBox(height: 30),
               ],
             ),
