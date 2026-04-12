@@ -10,4 +10,5 @@ class AssetIcons {
 
 class AssetImages {
   static const gaming = "assets/images/gaming.png";
+  static const map = "assets/images/map.png";
 }
