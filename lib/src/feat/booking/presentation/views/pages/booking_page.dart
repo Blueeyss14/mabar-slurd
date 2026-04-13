@@ -14,17 +14,32 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
+  int? selectedJam;
+
+  void selectJamFunc(int index) {
+    setState(() {
+      selectedJam = index;
+    });
+  }
+
+  int? selectedDuration;
+
+  void selectDurFunc(int index) {
+    setState(() {
+      selectedDuration = index;
+    });
+  }
+
+  int? selectedDevice;
+
+  void selectDeviceFunc(int index) {
+    setState(() {
+      selectedDevice = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // int selectedJam = 0;
-    bool isSelect = true;
-
-    // void selectJamFunc(int id) {
-    //   if (selectedJam == id) {
-    //     selectedJam
-    //   }
-    // }
-
     return Scaffold(
       backgroundColor: CustomColors.mabarBgDark,
       body: SingleChildScrollView(
@@ -96,19 +111,16 @@ class _BookingPageState extends State<BookingPage> {
                     (index) => FractionallySizedBox(
                       widthFactor: 1 / 3,
                       child: GestureDetector(
-                        onTap: () {
-                          isSelect = true;
-                          setState(() {});
-                        },
+                        onTap: () => selectJamFunc(index),
                         child: Container(
                           alignment: Alignment.center,
                           margin: const EdgeInsets.all(5),
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            color: isSelect
-                                ? CustomColors.mabarSurfaceCard
-                                : CustomColors.mabarBorderFocus,
+                            color: selectedJam == index
+                                ? CustomColors.mabarBorderFocus
+                                : CustomColors.mabarSurfaceCard,
                           ),
                           child: Text(
                             pilihJam[index]['jam'],
@@ -140,19 +152,16 @@ class _BookingPageState extends State<BookingPage> {
                     (index) => FractionallySizedBox(
                       widthFactor: 1 / 4,
                       child: GestureDetector(
-                        onTap: () {
-                          isSelect = true;
-                          setState(() {});
-                        },
+                        onTap: () => selectDurFunc(index),
                         child: Container(
                           alignment: Alignment.center,
                           margin: const EdgeInsets.all(5),
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            color: isSelect
-                                ? CustomColors.mabarSurfaceCard
-                                : CustomColors.mabarBorderFocus,
+                            color: selectedDuration == index
+                                ? CustomColors.mabarBorderFocus
+                                : CustomColors.mabarSurfaceCard,
                           ),
                           child: Text(
                             durasi[index]['durasi'],
@@ -184,19 +193,16 @@ class _BookingPageState extends State<BookingPage> {
                     (index) => FractionallySizedBox(
                       widthFactor: 1 / 2,
                       child: GestureDetector(
-                        onTap: () {
-                          isSelect = true;
-                          setState(() {});
-                        },
+                        onTap: () => selectDeviceFunc(index),
                         child: Container(
                           alignment: Alignment.center,
                           margin: const EdgeInsets.all(5),
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            color: isSelect
-                                ? CustomColors.mabarSurfaceCard
-                                : CustomColors.mabarBorderFocus,
+                            color: selectedDevice == index
+                                ? CustomColors.mabarBorderFocus
+                                : CustomColors.mabarSurfaceCard,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -240,9 +246,7 @@ class _BookingPageState extends State<BookingPage> {
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: isSelect
-                        ? CustomColors.mabarSurfaceCard
-                        : CustomColors.mabarBorderFocus,
+                    color: CustomColors.mabarSurfaceCard,
                   ),
                   child: const Column(
                     children: [
