@@ -3,7 +3,7 @@ import 'package:mabar_slurd/res/assets.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
 import 'package:mabar_slurd/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/Detail/presentation/widgets/detail_page_widgets.dart';
-import 'package:mabar_slurd/src/feat/booking/presentation/views/pages/booking_page.dart';
+import 'package:mabar_slurd/screens/bookingscreen.dart';
 
 class DetailScreen extends StatelessWidget {
   const DetailScreen({super.key});
@@ -235,7 +235,10 @@ class DetailScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const BookingPage(),
+                        builder: (context) => const BookingScreen(
+                          placeName: 'GG Arena',
+                          pricePerHour: 15000,
+                        ),
                       ),
                     ),
                     text: "Booking Sekarang",
