@@ -26,8 +26,6 @@ class _BookingScreenState extends State<BookingScreen> {
   int? _selectedDurIndex;
   int? _selectedDeviceIndex;
 
-  // ── Helpers ──────────────────────────────────────
-
   String get _formattedDate {
     if (_selectedDate == null) return '';
     final months = [
@@ -120,7 +118,6 @@ class _BookingScreenState extends State<BookingScreen> {
       );
       return;
     }
-    // TODO: Integrasi ke Firestore
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -190,7 +187,7 @@ class _BookingScreenState extends State<BookingScreen> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Judul ──────────────────────────────
+                // title
                 const Text(
                   'Booking',
                   style: TextStyle(
@@ -201,7 +198,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // ── Pilih Tanggal ───────────────────────
+                // tanggal
                 const Text(
                   'Pilih Tanggal',
                   style: TextStyle(
@@ -244,7 +241,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Pilih Jam ───────────────────────────
+                // jam
                 const Text(
                   'Pilih Jam',
                   style: TextStyle(
@@ -286,7 +283,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Durasi ──────────────────────────────
+                // durasi
                 const Text(
                   'Durasi',
                   style: TextStyle(
@@ -328,7 +325,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Pilih Perangkat ─────────────────────
+                // pilih device
                 const Text(
                   'Pilih Perangkat',
                   style: TextStyle(
@@ -384,7 +381,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Ringkasan ───────────────────────────
                 const Text(
                   'Ringkasan',
                   style: TextStyle(
@@ -440,7 +436,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Tombol Konfirmasi ───────────────────
+                // button konfirmasi
                 MabarButton(onTap: _confirmBooking, text: 'Konfirmasi Booking'),
                 const SizedBox(height: 30),
               ],
@@ -451,8 +447,6 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 }
-
-// ── Widget Helper ───────────────────────────────────────────
 
 class _SummaryRow extends StatelessWidget {
   final String label;
