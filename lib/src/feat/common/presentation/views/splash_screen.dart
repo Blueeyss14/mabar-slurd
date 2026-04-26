@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/views/home_screen.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
 import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // Menunggu 3 detik lalu berpindah ke HomeScreen
     Timer(const Duration(seconds: 3), () {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     });
   }
