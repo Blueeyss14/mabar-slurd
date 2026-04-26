@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/res/assets.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
@@ -137,10 +138,13 @@ class DetailScreen extends StatelessWidget {
                                 width: 30,
                               ),
                               const SizedBox(width: 10),
-                              Text(
+                              AutoSizeText(
                                 detailPagesWidgets[index]['label'],
+                                minFontSize: 6,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 18,
+                                  // fontSize: 18,
                                   color: CustomColors.mabarTextPrimary,
                                 ),
                               ),

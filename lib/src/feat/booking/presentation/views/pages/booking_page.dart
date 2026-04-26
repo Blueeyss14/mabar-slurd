@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/core/notification_service.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
@@ -164,10 +165,12 @@ class _BookingPageState extends State<BookingPage> {
                                 ? CustomColors.mabarBorderFocus
                                 : CustomColors.mabarSurfaceCard,
                           ),
-                          child: Text(
+                          child: AutoSizeText(
                             durasi[index]['durasi'],
+                            maxLines: 1,
+                            minFontSize: 6,
                             style: const TextStyle(
-                              fontSize: 18,
+                              // fontSize: 18,
                               color: CustomColors.mabarTextPrimary,
                             ),
                           ),
@@ -402,10 +405,10 @@ void _popUpDialogConfirm(BuildContext context) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E), // Sesuaikan dengan tema gelap MabarKeun
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        backgroundColor: const Color(
+          0xFF1E1E1E,
+        ), // Sesuaikan dengan tema gelap MabarKeun
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Konfirmasi Booking 🎮',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -414,14 +417,17 @@ void _popUpDialogConfirm(BuildContext context) {
           'Pastikan jadwal dan perangkat yang kamu pilih sudah sesuai ya!',
           style: TextStyle(color: Colors.white70),
         ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        actionsPadding: const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 10,
+        ),
         actions: [
           // Tombol Batal (bisa pakai TextButton biasa agar tidak terlalu dominan)
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Kembali', style: TextStyle(color: Colors.grey)),
           ),
-          
+
           // Tombol Konfirmasi pakai MabarButton
           // Sesuaikan parameter 'text' atau 'onPressed' dengan property di class MabarButton-mu
           SizedBox(
@@ -464,9 +470,7 @@ void _prosesBookingBerhasil(BuildContext context) async {
   // 3. Pindah ke Booking History Page
   // Pastikan route '/booking_history' sudah terdaftar di routes.dart kamu
   Navigator.push(
-    context, 
-    MaterialPageRoute(
-      builder: (context) => const BookingHistoryPage()
-     ),
+    context,
+    MaterialPageRoute(builder: (context) => const BookingHistoryPage()),
   );
 }
