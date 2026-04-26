@@ -173,7 +173,7 @@ class DetailScreen extends StatelessWidget {
                     child: const Row(
                       children: [
                         Text(
-                          "15k/jam",
+                          "15k",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
