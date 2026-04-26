@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:mabar_slurd/core/notification_service.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/home_screen.dart';
+=======
+import 'package:mabar_slurd/src/feat/common/presentation/views/splash_screen.dart'; // [NEW] Import SplashScreen
+>>>>>>> origin/Ilham-Sigma
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: SplashScreen(), // [UPDATE] Arahkan ke SplashScreen pertama kali
     );
   }
 }
