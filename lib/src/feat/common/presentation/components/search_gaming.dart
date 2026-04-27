@@ -30,6 +30,9 @@ class SearchGaming extends StatelessWidget {
                 hintStyle: TextStyle(color: CustomColors.mabarTextPrimary),
                 hintText: "Cari Temen Mabar",
               ),
+              style: TextStyle(
+                color: CustomColors.mabarTextPrimary,
+              ),
             ),
           ),
         ],
