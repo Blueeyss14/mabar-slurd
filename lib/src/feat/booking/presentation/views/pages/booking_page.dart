@@ -20,6 +20,7 @@ class _BookingPageState extends State<BookingPage> {
   int? selectedJam;
   bool isCalendarPoping = false;
   String calendarr = 'Calendar';
+  double _sliderDuration = 1.0;
 
   void selectJamFunc(int index) {
     setState(() {
@@ -149,52 +150,74 @@ class _BookingPageState extends State<BookingPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      "Durasi",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: CustomColors.mabarTextPrimary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Durasi",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            color: CustomColors.mabarTextPrimary,
+                          ),
+                        ),
+                        Text(
+                          "${_sliderDuration.round()} Jam",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: CustomColors.mabarBorderFocus,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 15),
 
-                    // Slider(
-                    //   value: BorderSide.strokeAlignCenter,
-                    //   onChanged: (value) {},
-                    // ),
-                    Wrap(
-                      alignment: WrapAlignment.start,
-                      children: List.generate(
-                        durasi.length,
-                        (index) => FractionallySizedBox(
-                          widthFactor: 1 / 4,
-                          child: GestureDetector(
-                            onTap: () => selectDurFunc(index),
-                            child: Container(
-                              alignment: Alignment.center,
-                              margin: const EdgeInsets.all(5),
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                color: selectedDuration == index
-                                    ? CustomColors.mabarBorderFocus
-                                    : CustomColors.mabarSurfaceCard,
-                              ),
-                              child: AutoSizeText(
-                                durasi[index]['durasi'],
-                                maxLines: 1,
-                                minFontSize: 6,
-                                style: const TextStyle(
-                                  // fontSize: 18,
-                                  color: CustomColors.mabarTextPrimary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    Slider(
+                      max: 24,
+                      min: 1,
+                      divisions: 23,
+                      activeColor: CustomColors.mabarBorderFocus,
+                      value: _sliderDuration,
+                      label: '${_sliderDuration.round()} Jam',
+                      onChanged: (value) {
+                        setState(() {
+                          _sliderDuration = value;
+                        });
+                      },
                     ),
+                    // Wrap(
+                    //   alignment: WrapAlignment.start,
+                    //   children: List.generate(
+                    //     durasi.length,
+                    //     (index) => FractionallySizedBox(
+                    //       widthFactor: 1 / 4,
+                    //       child: GestureDetector(
+                    //         onTap: () => selectDurFunc(index),
+                    //         child: Container(
+                    //           alignment: Alignment.center,
+                    //           margin: const EdgeInsets.all(5),
+                    //           padding: const EdgeInsets.all(15),
+                    //           decoration: BoxDecoration(
+                    //             borderRadius: BorderRadius.circular(14),
+                    //             color: selectedDuration == index
+                    //                 ? CustomColors.mabarBorderFocus
+                    //                 : CustomColors.mabarSurfaceCard,
+                    //           ),
+                    //           child: AutoSizeText(
+                    //             durasi[index]['durasi'],
+                    //             maxLines: 1,
+                    //             minFontSize: 6,
+                    //             style: const TextStyle(
+                    //               // fontSize: 18,
+                    //               color: CustomColors.mabarTextPrimary,
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                     const SizedBox(height: 20),
                     const Text(
                       "Pilih Perangkat",
