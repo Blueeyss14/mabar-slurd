@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:get/get.dart';
 import 'package:mabar_slurd/res/assets.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
@@ -11,7 +10,8 @@ class MapGaming extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LocationController locationController = Get.find<LocationController>();
+    final LocationController locationController =
+        Get.find<LocationController>();
 
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -47,7 +47,8 @@ class MapGaming extends StatelessWidget {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
               subdomains: const ['a', 'b', 'c', 'd'],
               userAgentPackageName: 'com.example.mabar_slurd',
             ),
@@ -58,10 +59,7 @@ class MapGaming extends StatelessWidget {
                     point: locationController.selectedLocation.value!,
                     width: 40,
                     height: 40,
-                    child: Image.asset(
-                      AssetIcons.location,
-                      color: Colors.red,
-                    ),
+                    child: Image.asset(AssetIcons.location, color: Colors.red),
                   ),
                 ],
               ),
