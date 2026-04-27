@@ -444,7 +444,7 @@ class _BookingPageState extends State<BookingPage> {
                 });
               },
               onDateChanged: (value) {
-                calendarr = value.toString();
+                calendarr = value.toString().split(' ')[0];
               },
             ),
         ],
