@@ -335,7 +335,7 @@ class _BookingPageState extends State<BookingPage> {
                                 ),
                                 SizedBox(height: 10),
                                 Text(
-                                  '14:00 - 16:00',
+                                  "14:00 - 16:00",
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
