@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
+import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 
 class CalendarPop extends StatelessWidget {

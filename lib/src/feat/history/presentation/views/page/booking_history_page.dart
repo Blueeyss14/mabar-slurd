@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
+import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_list_card.dart';
 import 'package:mabar_slurd/src/feat/history/presentation/views/widgets/history_data.dart';
 
