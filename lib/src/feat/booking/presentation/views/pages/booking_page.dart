@@ -1,6 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/core/notification_service.dart';
+import 'package:mabar_slurd/src/core/notification_service.dart';
 import 'package:mabar_slurd/res/custom_colors.dart';
 import 'package:mabar_slurd/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/components/calendar_pop.dart';
