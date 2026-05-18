@@ -1,4 +1,4 @@
-import 'package:mabar_slurd/res/assets.dart';
+import 'package:mabar_slurd/src/res/assets.dart';
 
 List<Map<String, dynamic>> detailPagesWidgets = [
   {"icon": AssetIcons.pc, "label": 'PC Gaming'},

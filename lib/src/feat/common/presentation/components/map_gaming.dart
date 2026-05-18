@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:mabar_slurd/res/assets.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
+import 'package:mabar_slurd/src/res/assets.dart';
+import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/controllers/location_controller.dart';
 
 class MapGaming extends StatelessWidget {

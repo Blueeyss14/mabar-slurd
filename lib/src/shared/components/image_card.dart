@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/res/assets.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
+import 'package:mabar_slurd/src/res/assets.dart';
+import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class ImageCard extends StatelessWidget {
   final double? size;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/res/assets.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
+import 'package:mabar_slurd/src/res/assets.dart';
+import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/register_screen.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/home_screen.dart';
 
