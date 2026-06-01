@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
-class ImageCard extends StatelessWidget {
+class MabarImageCard extends StatelessWidget {
   final double? size;
   final EdgeInsetsGeometry? margin;
   final Color? color;
@@ -10,7 +10,7 @@ class ImageCard extends StatelessWidget {
   final Widget? child;
   final void Function()? onTap;
   final BoxBorder? border;
-  const ImageCard({
+  const MabarImageCard({
     super.key,
     this.size,
     this.margin,
