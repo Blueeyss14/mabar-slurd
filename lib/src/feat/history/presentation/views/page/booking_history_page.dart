@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_list_card.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
+import 'package:mabar_slurd/src/feat/history/presentation/views/page/booking_history_detail_page.dart';
 import 'package:mabar_slurd/src/feat/history/presentation/views/widgets/history_data.dart';
 
 class BookingHistoryPage extends StatefulWidget {
@@ -80,12 +81,29 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                       time: filtered[index]['time'],
                       total: filtered[index]['total'],
                       status: filtered[index]['status'],
+                      onTap: () => _goToDetail(filtered[index]),
                     ),
                   ),
                 const SizedBox(height: 20),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _goToDetail(Map<String, dynamic> item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingHistoryDetailPage(
+          title: item['title'],
+          subTitle: item['subTitle'],
+          date: item['date'],
+          time: item['time'],
+          total: item['total'],
+          status: item['status'],
         ),
       ),
     );

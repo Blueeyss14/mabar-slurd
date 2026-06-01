@@ -10,6 +10,29 @@ class LocationController extends GetxController {
   RxString locationName = "Memuat lokasi...".obs;
   RxBool isLoading = false.obs;
 
+  // Daftar warnet terdekat (offset relatif dari lokasi user dalam derajat)
+  RxList<Map<String, dynamic>> nearbyPlaces = <Map<String, dynamic>>[].obs;
+
+  static const List<Map<String, dynamic>> _placeOffsets = [
+    {'name': 'GG Arena', 'dLat': 0.006, 'dLng': 0.004},
+    {'name': 'Nexus Esports', 'dLat': -0.005, 'dLng': 0.007},
+    {'name': 'CyberShop Hub', 'dLat': 0.008, 'dLng': -0.006},
+    {'name': 'Telkom Gaming', 'dLat': -0.007, 'dLng': -0.005},
+    {'name': 'Pixel Lounge', 'dLat': 0.003, 'dLng': 0.009},
+  ];
+
+  void _generateNearbyPlaces(LatLng center) {
+    nearbyPlaces.value = _placeOffsets.map((p) {
+      return {
+        'name': p['name'],
+        'location': LatLng(
+          center.latitude + (p['dLat'] as double),
+          center.longitude + (p['dLng'] as double),
+        ),
+      };
+    }).toList();
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -53,6 +76,7 @@ class LocationController extends GetxController {
       LatLng loc = LatLng(position.latitude, position.longitude);
       currentLocation.value = loc;
       selectedLocation.value = loc;
+      _generateNearbyPlaces(loc);
       await updateLocationName(loc);
     } catch (e) {
       debugPrint("Error getting location: $e");
