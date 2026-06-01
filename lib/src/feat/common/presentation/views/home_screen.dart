@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/image_card.dart';
-import 'package:mabar_slurd/src/feat/Detail/presentation/views/pages/detail_screen.dart';
+import 'package:mabar_slurd/src/feat/detail/presentation/views/pages/detail_screen.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/components/map_gaming.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/components/search_gaming.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/controllers/location_controller.dart';
@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      child: const ImageCard(),
+                      child: const MabarImageCard(),
                     ),
                   ),
                 ),

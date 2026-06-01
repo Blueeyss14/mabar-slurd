@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -45,14 +46,16 @@ class LocationController extends GetxController {
 
     try {
       Position position = await Geolocator.getCurrentPosition(
-        timeLimit: const Duration(seconds: 10),
+        locationSettings: const LocationSettings(
+          timeLimit: Duration(seconds: 10),
+        ),
       );
       LatLng loc = LatLng(position.latitude, position.longitude);
       currentLocation.value = loc;
       selectedLocation.value = loc;
       await updateLocationName(loc);
     } catch (e) {
-      print("Error getting location: $e");
+      debugPrint("Error getting location: $e");
       locationName.value = "Gagal mendapatkan lokasi";
     } finally {
       isLoading.value = false;
@@ -65,10 +68,10 @@ class LocationController extends GetxController {
           location.latitude, location.longitude).timeout(const Duration(seconds: 5));
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        locationName.value = "${place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown'}";
+        locationName.value = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
       }
     } catch (e) {
-      print("Error getting placemark: $e");
+      debugPrint("Error getting placemark: $e");
       locationName.value = "Unknown Location";
     }
   }

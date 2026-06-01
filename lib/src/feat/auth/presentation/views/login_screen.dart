@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        CustomColors.mabarBgDark.withOpacity(0.1),
+                        CustomColors.mabarBgDark.withValues(alpha: 0.1),
                         CustomColors.mabarBgDark,
                       ],
                     ),
@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: CustomColors.mabarPurple.withOpacity(0.4),
+                          color: CustomColors.mabarPurple.withValues(alpha: 0.4),
                           spreadRadius: 2,
                           blurRadius: 20,
                           offset: const Offset(0, 8),
