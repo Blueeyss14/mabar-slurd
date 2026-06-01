@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_list_card.dart';
+import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
 import 'package:mabar_slurd/src/feat/history/presentation/views/widgets/history_data.dart';
 
 class BookingHistoryPage extends StatefulWidget {
@@ -11,8 +12,25 @@ class BookingHistoryPage extends StatefulWidget {
 }
 
 class _BookingHistoryPageState extends State<BookingHistoryPage> {
+  String _selectedFilter = 'Semua';
+
+  static const List<String> _filters = [
+    'Semua',
+    'Berlangsung',
+    'Selesai',
+    'Dibatalkan',
+  ];
+
+  List<Map<String, dynamic>> get _filteredData {
+    if (_selectedFilter == 'Semua') return historyData;
+    return historyData
+        .where((item) => item['status'] == _selectedFilter)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredData;
     return Scaffold(
       backgroundColor: CustomColors.mabarBgDark,
       body: SingleChildScrollView(
@@ -39,19 +57,29 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                     color: CustomColors.mabarTextSecondary,
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
+                _buildFilterChips(),
+                const SizedBox(height: 20),
 
-                if (historyData.isEmpty)
-                  _buildEmptyState()
+                if (filtered.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 80),
+                    child: MabarEmptyState(
+                      icon: Icons.receipt_long_outlined,
+                      title: "Belum ada riwayat",
+                      subtitle: "Booking kamu akan muncul di sini",
+                    ),
+                  )
                 else
                   ...List.generate(
-                    historyData.length,
+                    filtered.length,
                     (index) => MabarListCard(
-                      title: historyData[index]['title'],
-                      subTitle: historyData[index]['subTitle'],
-                      date: historyData[index]['date'],
-                      time: historyData[index]['time'],
-                      total: historyData[index]['total'],
+                      title: filtered[index]['title'],
+                      subTitle: filtered[index]['subTitle'],
+                      date: filtered[index]['date'],
+                      time: filtered[index]['time'],
+                      total: filtered[index]['total'],
+                      status: filtered[index]['status'],
                     ),
                   ),
                 const SizedBox(height: 20),
@@ -63,36 +91,45 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Padding(
-      padding: EdgeInsets.only(top: 80),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: CustomColors.mabarTextTertiary,
-            ),
-            SizedBox(height: 16),
-            Text(
-              "Belum ada riwayat",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: CustomColors.mabarTextPrimary,
+  Widget _buildFilterChips() {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final filter = _filters[index];
+          final bool isActive = _selectedFilter == filter;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedFilter = filter),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                color: isActive
+                    ? CustomColors.mabarBorderFocus
+                    : CustomColors.mabarSurfaceCard,
+                border: Border.all(
+                  color: isActive
+                      ? CustomColors.mabarBorderFocus
+                      : CustomColors.mabarBorderSubtle,
+                ),
+              ),
+              child: Text(
+                filter,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isActive
+                      ? CustomColors.mabarTextPrimary
+                      : CustomColors.mabarTextSecondary,
+                ),
               ),
             ),
-            SizedBox(height: 8),
-            Text(
-              "Booking kamu akan muncul di sini",
-              style: TextStyle(
-                fontSize: 14,
-                color: CustomColors.mabarTextSecondary,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
