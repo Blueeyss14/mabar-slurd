@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
+import 'package:mabar_slurd/src/feat/profile/presentation/views/pages/edit_profile_page.dart';
+import 'package:mabar_slurd/src/feat/profile/presentation/views/pages/notification_page.dart';
+import 'package:mabar_slurd/src/feat/profile/presentation/views/pages/payment_method_page.dart';
+import 'package:mabar_slurd/src/feat/profile/presentation/views/pages/help_page.dart';
+import 'package:mabar_slurd/src/feat/profile/presentation/views/pages/about_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -27,7 +32,7 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(height: 20),
               _buildHeader(),
               const SizedBox(height: 25),
-              _buildMenuSection(),
+              _buildMenuSection(context),
               const SizedBox(height: 25),
               _buildLogoutButton(context),
               const SizedBox(height: 30),
@@ -83,26 +88,50 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuSection() {
+  Widget _buildMenuSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: CustomColors.mabarSurfaceCard,
       ),
-      child: const Column(
+      child: Column(
         children: [
-          _ProfileMenuItem(icon: Icons.person_outline, title: "Edit Profil"),
-          _ProfileMenuItem(icon: Icons.notifications_outlined, title: "Notifikasi"),
-          _ProfileMenuItem(icon: Icons.payment_outlined, title: "Metode Pembayaran"),
-          _ProfileMenuItem(icon: Icons.help_outline, title: "Bantuan"),
+          _ProfileMenuItem(
+            icon: Icons.person_outline,
+            title: "Edit Profil",
+            onTap: () => _goTo(context, const EditProfilePage()),
+          ),
+          _ProfileMenuItem(
+            icon: Icons.notifications_outlined,
+            title: "Notifikasi",
+            onTap: () => _goTo(context, const NotificationPage()),
+          ),
+          _ProfileMenuItem(
+            icon: Icons.payment_outlined,
+            title: "Metode Pembayaran",
+            onTap: () => _goTo(context, const PaymentMethodPage()),
+          ),
+          _ProfileMenuItem(
+            icon: Icons.help_outline,
+            title: "Bantuan",
+            onTap: () => _goTo(context, const HelpPage()),
+          ),
           _ProfileMenuItem(
             icon: Icons.info_outline,
             title: "Tentang Aplikasi",
             showDivider: false,
+            onTap: () => _goTo(context, const AboutPage()),
           ),
         ],
       ),
+    );
+  }
+
+  void _goTo(BuildContext context, Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => page),
     );
   }
 
@@ -191,11 +220,13 @@ class _ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final bool showDivider;
+  final VoidCallback? onTap;
 
   const _ProfileMenuItem({
     required this.icon,
     required this.title,
     this.showDivider = true,
+    this.onTap,
   });
 
   @override
@@ -219,7 +250,7 @@ class _ProfileMenuItem extends StatelessWidget {
             Icons.chevron_right,
             color: CustomColors.mabarTextTertiary,
           ),
-          onTap: () {},
+          onTap: onTap,
         ),
         if (showDivider)
           const Divider(

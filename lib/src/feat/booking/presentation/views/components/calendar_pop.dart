@@ -44,7 +44,7 @@ class CalendarPop extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Select Date",
+                      "Pilih Tanggal",
                       style: TextStyle(
                         color: CustomColors.mabarTextPrimary,
                         fontSize: 16,

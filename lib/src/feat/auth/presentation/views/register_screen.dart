@@ -52,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             // USERNAME
             Text(
-              "USERNAME",
+              "NAMA PENGGUNA",
               style: TextStyle(
                 color: CustomColors.mabarTextSecondary,
                 fontSize: 12,
@@ -88,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             // PASSWORD
             Text(
-              "PASSWORD",
+              "KATA SANDI",
               style: TextStyle(
                 color: CustomColors.mabarTextSecondary,
                 fontSize: 12,
@@ -222,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Navigator.pop(context);
                   },
                   child: const Text(
-                    "LOGIN KEMBALI",
+                    "MASUK KEMBALI",
                     style: TextStyle(
                       color: CustomColors.mabarPurpleLight,
                       fontSize: 14,

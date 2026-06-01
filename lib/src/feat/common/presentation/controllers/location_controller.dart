@@ -72,7 +72,7 @@ class LocationController extends GetxController {
       }
     } catch (e) {
       debugPrint("Error getting placemark: $e");
-      locationName.value = "Unknown Location";
+      locationName.value = "Lokasi tidak diketahui";
     }
   }
 

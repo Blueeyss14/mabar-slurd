@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/register_screen.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/views/forgot_password_screen.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -86,9 +87,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-                  // EMAIL ADDRESS
+                  // EMAIL
                   Text(
-                    "EMAIL ADDRESS",
+                    "ALAMAT EMAIL",
                     style: TextStyle(
                       color: CustomColors.mabarTextSecondary,
                       fontSize: 12,
@@ -109,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "PASSWORD",
+                        "KATA SANDI",
                         style: TextStyle(
                           color: CustomColors.mabarTextSecondary,
                           fontSize: 12,
@@ -117,12 +118,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           letterSpacing: 1.0,
                         ),
                       ),
-                      Text(
-                        "LUPA?",
-                        style: TextStyle(
-                          color: CustomColors.mabarPurple,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "LUPA?",
+                          style: TextStyle(
+                            color: CustomColors.mabarPurple,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -170,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        "LOGIN SEKARANG",
+                        "MASUK SEKARANG",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -194,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          "ATAU LOGIN DENGAN",
+                          "ATAU MASUK DENGAN",
                           style: TextStyle(
                             color: CustomColors.mabarTextTertiary,
                             fontSize: 10,

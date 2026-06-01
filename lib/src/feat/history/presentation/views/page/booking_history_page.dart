@@ -33,7 +33,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                   ),
                 ),
                 const Text(
-                  'Lihat Aktivitasi Booking Kamu',
+                  'Lihat aktivitas booking kamu',
                   style: TextStyle(
                     fontSize: 14,
                     color: CustomColors.mabarTextSecondary,
@@ -41,19 +41,57 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                 ),
                 const SizedBox(height: 30),
 
-                ...List.generate(
-                  historyData.length,
-                  (index) => MabarListCard(
-                    title: historyData[index]['title'],
-                    subTitle: historyData[index]['subTitle'],
-                    date: historyData[index]['date'],
-                    time: historyData[index]['time'],
-                    total: historyData[index]['total'],
+                if (historyData.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...List.generate(
+                    historyData.length,
+                    (index) => MabarListCard(
+                      title: historyData[index]['title'],
+                      subTitle: historyData[index]['subTitle'],
+                      date: historyData[index]['date'],
+                      time: historyData[index]['time'],
+                      total: historyData[index]['total'],
+                    ),
                   ),
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Padding(
+      padding: EdgeInsets.only(top: 80),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 80,
+              color: CustomColors.mabarTextTertiary,
+            ),
+            SizedBox(height: 16),
+            Text(
+              "Belum ada riwayat",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: CustomColors.mabarTextPrimary,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Booking kamu akan muncul di sini",
+              style: TextStyle(
+                fontSize: 14,
+                color: CustomColors.mabarTextSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );
