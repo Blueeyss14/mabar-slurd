@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/register_screen.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/views/home_screen.dart';
+import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -165,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
+                            builder: (context) => const MainShell(),
                           ),
                         );
                       },
