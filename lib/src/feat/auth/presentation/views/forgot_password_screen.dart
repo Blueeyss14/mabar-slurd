@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
+import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -98,10 +99,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildTextField(
+            MabarTextField(
               controller: _emailController,
               hintText: "gaming@example.com",
               iconData: Icons.mail_outline_rounded,
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 40),
             SizedBox(
@@ -140,45 +142,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    required IconData iconData,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: CustomColors.mabarSurfaceInput,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CustomColors.mabarBorderSubtle, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.emailAddress,
-        style: const TextStyle(
-          color: CustomColors.mabarTextPrimary,
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: CustomColors.mabarTextTertiary,
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            iconData,
-            color: CustomColors.mabarPurple,
-            size: 20,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
+import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -111,20 +112,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             const SizedBox(height: 32),
             _buildLabel("NAMA PENGGUNA"),
-            _buildTextField(
+            MabarTextField(
               controller: _usernameController,
               iconData: Icons.person_outline_rounded,
             ),
             const SizedBox(height: 20),
             _buildLabel("ALAMAT EMAIL"),
-            _buildTextField(
+            MabarTextField(
               controller: _emailController,
               iconData: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
             _buildLabel("NOMOR TELEPON"),
-            _buildTextField(
+            MabarTextField(
               controller: _phoneController,
               iconData: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
@@ -168,40 +169,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required IconData iconData,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: CustomColors.mabarSurfaceInput,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CustomColors.mabarBorderSubtle, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(
-          color: CustomColors.mabarTextPrimary,
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          prefixIcon: Icon(
-            iconData,
-            color: CustomColors.mabarPurple,
-            size: 20,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
         ),
       ),
     );

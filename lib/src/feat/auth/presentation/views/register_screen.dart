@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
+import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,7 +10,6 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  bool _isPasswordVisible = false;
   bool _isAgreed = false;
 
   @override
@@ -61,7 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildTextField(
+            const MabarTextField(
               hintText: "pro_gamer_99",
               iconData: Icons.person_outline_rounded,
             ),
@@ -79,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildTextField(
+            const MabarTextField(
               hintText: "name@email.com",
               iconData: Icons.mail_outline_rounded,
             ),
@@ -97,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildTextField(
+            const MabarTextField(
               hintText: "••••••••",
               iconData: Icons.lock_outline_rounded,
               isPassword: true,
@@ -235,63 +235,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 40),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String hintText,
-    required IconData iconData,
-    bool isPassword = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: CustomColors.mabarSurfaceInput,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: CustomColors.mabarBorderSubtle,
-          width: 1,
-        ),
-      ),
-      child: TextField(
-        obscureText: isPassword && !_isPasswordVisible,
-        style: const TextStyle(
-          color: CustomColors.mabarTextPrimary,
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: CustomColors.mabarTextTertiary,
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            iconData,
-            color: CustomColors.mabarPurple,
-            size: 20,
-          ),
-          suffixIcon: isPassword
-              ? GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
-                  child: Icon(
-                    _isPasswordVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: CustomColors.mabarTextTertiary,
-                    size: 20,
-                  ),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
         ),
       ),
     );

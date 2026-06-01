@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
+import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
 
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
@@ -52,7 +53,10 @@ class NotificationPage extends StatelessWidget {
         ),
       ),
       body: _notifications.isEmpty
-          ? _buildEmptyState()
+          ? const MabarEmptyState(
+              icon: Icons.notifications_off_outlined,
+              title: "Belum ada notifikasi",
+            )
           : ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: _notifications.length,
@@ -113,30 +117,6 @@ class NotificationPage extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.notifications_off_outlined,
-            size: 80,
-            color: CustomColors.mabarTextTertiary,
-          ),
-          SizedBox(height: 16),
-          Text(
-            "Belum ada notifikasi",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: CustomColors.mabarTextPrimary,
             ),
           ),
         ],
