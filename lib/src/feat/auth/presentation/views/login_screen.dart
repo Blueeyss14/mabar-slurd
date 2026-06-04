@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/controllers/auth_controller.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/register_screen.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/forgot_password_screen.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,6 +15,17 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final AuthController authController = Get.put(AuthController());
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,7 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const MabarTextField(
+                  MabarTextField(
+                    controller: emailController,
                     hintText: "gaming@example.com",
                     iconData: Icons.mail_outline_rounded,
                   ),
@@ -139,56 +152,57 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const MabarTextField(
+                  MabarTextField(
+                    controller: passwordController,
                     hintText: "••••••••",
                     iconData: Icons.lock_outline_rounded,
                     isPassword: true,
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // LOGIN BUTTON
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: CustomColors.mabarPurpleLight,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: CustomColors.mabarPurple.withValues(alpha: 0.4),
-                          spreadRadius: 2,
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      onPressed: () {
-                        // Navigate to Home
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MainShell(),
+                  Obx(() => authController.isLoading.value
+                      ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight))
+                      : Container(
+                          width: double.infinity,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: CustomColors.mabarPurpleLight,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: CustomColors.mabarPurple.withValues(alpha: 0.4),
+                                spreadRadius: 2,
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      child: const Text(
-                        "MASUK SEKARANG",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () {
+                              authController.loginUser(
+                                emailController.text,
+                                passwordController.text,
+                              );
+                            },
+                            child: const Text(
+                              "MASUK SEKARANG",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
                   ),
                   
                   const SizedBox(height: 40),
