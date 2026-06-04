@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/controllers/auth_controller.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
@@ -14,6 +16,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.put(AuthController());
+
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
       backgroundColor: CustomColors.mabarBgDark, // or mabarSurfaceCard
       appBar: AppBar(
@@ -79,7 +86,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const MabarTextField(
+            MabarTextField(
+              controller: emailController,
               hintText: "name@email.com",
               iconData: Icons.mail_outline_rounded,
             ),
@@ -97,7 +105,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const MabarTextField(
+            MabarTextField(
+              controller: passwordController,
               hintText: "••••••••",
               iconData: Icons.lock_outline_rounded,
               isPassword: true,
@@ -166,43 +175,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 40),
 
             // REGISTER BUTTON
-            Container(
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                color: CustomColors.mabarPurpleLight,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: CustomColors.mabarPurple.withValues(alpha: 0.4),
-                    spreadRadius: 2,
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            Obx(() => authController.isLoading.value
+                ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight )) 
+                : Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: CustomColors.mabarPurpleLight,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CustomColors.mabarPurple.withValues(alpha: 0.4),
+                          spreadRadius: 2,
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () {
+                        // Back to Login or Auto Login
+                        authController.registerUser(
+                          emailController.text,
+                          passwordController.text,
+                        );
+                      },
+                      child: const Text(
+                        "BUAT AKUN SEKARANG",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                onPressed: () {
-                  // Back to Login or Auto Login
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "BUAT AKUN SEKARANG",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
 
             const SizedBox(height: 40),
 
