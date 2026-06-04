@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
@@ -44,6 +45,12 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildHeader() {
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = (user?.displayName?.isNotEmpty == true)
+        ? user!.displayName!
+        : user?.email?.split('@').first ?? 'Pengguna';
+    final email = user?.email ?? '-';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
@@ -67,18 +74,18 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            "pro_gamer_99",
-            style: TextStyle(
+          Text(
+            displayName,
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 22,
               color: CustomColors.mabarTextPrimary,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            "gaming@example.com",
-            style: TextStyle(
+          Text(
+            email,
+            style: const TextStyle(
               fontSize: 14,
               color: CustomColors.mabarTextSecondary,
             ),

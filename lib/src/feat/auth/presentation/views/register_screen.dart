@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/controllers/auth_controller.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
@@ -11,11 +13,29 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _isAgreed = false;
+  late final AuthController authController;
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    authController = Get.put(AuthController());
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomColors.mabarBgDark, // or mabarSurfaceCard
+      backgroundColor: CustomColors.mabarBgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -61,11 +81,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const MabarTextField(
+            MabarTextField(
+              controller: usernameController,
               hintText: "pro_gamer_99",
               iconData: Icons.person_outline_rounded,
             ),
-            
+
             const SizedBox(height: 20),
 
             // EMAIL
@@ -79,7 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const MabarTextField(
+            MabarTextField(
+              controller: emailController,
               hintText: "name@email.com",
               iconData: Icons.mail_outline_rounded,
             ),
@@ -97,7 +119,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const MabarTextField(
+            MabarTextField(
+              controller: passwordController,
               hintText: "••••••••",
               iconData: Icons.lock_outline_rounded,
               isPassword: true,
@@ -166,42 +189,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 40),
 
             // REGISTER BUTTON
-            Container(
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                color: CustomColors.mabarPurpleLight,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: CustomColors.mabarPurple.withValues(alpha: 0.4),
-                    spreadRadius: 2,
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+            Obx(() => authController.isLoading.value
+                ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight))
+                : Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: CustomColors.mabarPurpleLight,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CustomColors.mabarPurple.withValues(alpha: 0.4),
+                          spreadRadius: 2,
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () {
+                        authController.registerUser(
+                          emailController.text,
+                          passwordController.text,
+                          username: usernameController.text,
+                        );
+                      },
+                      child: const Text(
+                        "BUAT AKUN SEKARANG",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: () {
-                  // Back to Login or Auto Login
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "BUAT AKUN SEKARANG",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
             ),
 
             const SizedBox(height: 40),
@@ -218,9 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
+                  onTap: () => Navigator.pop(context),
                   child: const Text(
                     "MASUK KEMBALI",
                     style: TextStyle(
