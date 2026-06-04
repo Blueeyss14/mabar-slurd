@@ -7,10 +7,19 @@ import 'package:mabar_slurd/src/feat/detail/presentation/widgets/detail_page_wid
 import 'package:mabar_slurd/src/feat/booking/presentation/views/pages/booking_page.dart';
 
 class DetailScreen extends StatelessWidget {
-  const DetailScreen({super.key});
+  final Map<String, dynamic> venue;
+
+  const DetailScreen({super.key, required this.venue});
 
   @override
   Widget build(BuildContext context) {
+    final name = venue['name'] as String? ?? '-';
+    final rating = (venue['rating'] as num?)?.toDouble() ?? 0.0;
+    final distance = (venue['distance'] as num?)?.toDouble() ?? 0.0;
+    final pricePerHour = (venue['price_per_hour'] as num?)?.toInt() ?? 0;
+    final totalSlots = (venue['total_slots'] as num?)?.toInt() ?? 0;
+    final badge = venue['badge'] as String?;
+
     return Scaffold(
       backgroundColor: CustomColors.mabarBgDark,
       body: SingleChildScrollView(
@@ -25,22 +34,72 @@ class DetailScreen extends StatelessWidget {
                   height: 300,
                   child: Image.asset(AssetImages.gaming, fit: BoxFit.cover),
                 ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    margin: const EdgeInsets.all(10),
+                // gradient atas gelap untuk back button
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 120,
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      color: CustomColors.mabarBorderFocus,
-                    ),
-                    child: const Text(
-                      "Populer",
-                      style: TextStyle(
-                        color: CustomColors.mabarTextPrimary,
-                        fontSize: 16,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.7),
+                          Colors.transparent,
+                        ],
                       ),
                     ),
+                  ),
+                ),
+                // gradient bawah supaya tidak nyatu dengan konten
+                const Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 120,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          CustomColors.mabarBgDark,
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (badge != null)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: SafeArea(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        margin: const EdgeInsets.only(top: 8, right: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: CustomColors.mabarBorderFocus,
+                        ),
+                        child: Text(
+                          badge,
+                          style: const TextStyle(
+                            color: CustomColors.mabarTextPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                SafeArea(
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.white),
                   ),
                 ),
               ],
@@ -51,16 +110,15 @@ class DetailScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "GG Arena",
-                    style: TextStyle(
+                  Text(
+                    name,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                       color: CustomColors.mabarTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 10),
-
                   Row(
                     children: [
                       Image.asset(
@@ -68,9 +126,9 @@ class DetailScreen extends StatelessWidget {
                         width: 15,
                         color: CustomColors.mabarCyan,
                       ),
-                      const Text(
-                        "  4.8 - 0.8 km",
-                        style: TextStyle(
+                      Text(
+                        "  $rating - $distance km",
+                        style: const TextStyle(
                           fontSize: 16,
                           color: CustomColors.mabarTextSecondary,
                         ),
@@ -78,33 +136,13 @@ class DetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    "15k/jam",
-                    style: TextStyle(
+                  Text(
+                    "${pricePerHour}k/jam",
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
                       color: CustomColors.mabarPurpleDark,
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Image.asset(
-                        AssetIcons.location,
-                        width: 20,
-                        color: CustomColors.mabarTextSecondary,
-                      ),
-                      const Flexible(
-                        child: Text(
-                          " jl. Sigma Mewing No. 67, Bandung",
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: CustomColors.mabarTextSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 20),
                   const Text(
@@ -116,7 +154,6 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   Wrap(
                     alignment: WrapAlignment.start,
                     children: List.generate(
@@ -144,7 +181,6 @@ class DetailScreen extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  // fontSize: 18,
                                   color: CustomColors.mabarTextPrimary,
                                 ),
                               ),
@@ -154,9 +190,7 @@ class DetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   const Text(
                     "Harga",
                     style: TextStyle(
@@ -166,7 +200,6 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   Container(
                     padding: const EdgeInsets.all(20),
                     width: double.infinity,
@@ -174,17 +207,17 @@ class DetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       color: CustomColors.mabarSurfaceCard,
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Text(
-                          "15k",
-                          style: TextStyle(
+                          "${pricePerHour}k",
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                             color: CustomColors.mabarPurpleDark,
                           ),
                         ),
-                        Text(
+                        const Text(
                           '/Jam',
                           style: TextStyle(
                             fontSize: 20,
@@ -195,9 +228,8 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   const Text(
-                    "Harga",
+                    "Ketersediaan",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
@@ -205,7 +237,6 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   Container(
                     padding: const EdgeInsets.all(20),
                     width: double.infinity,
@@ -213,19 +244,19 @@ class DetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       color: CustomColors.mabarSurfaceCard,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Slot Tersedia',
+                        const Text(
+                          'Total Slot',
                           style: TextStyle(
                             fontSize: 20,
                             color: CustomColors.mabarTextSecondary,
                           ),
                         ),
                         Text(
-                          "5 Slot",
-                          style: TextStyle(
+                          "$totalSlots Slot",
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                             color: CustomColors.mabarCyan,
@@ -239,7 +270,7 @@ class DetailScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const BookingPage(),
+                        builder: (context) => BookingPage(venue: venue),
                       ),
                     ),
                     text: "Booking Sekarang",

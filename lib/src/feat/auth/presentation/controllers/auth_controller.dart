@@ -14,7 +14,7 @@ class AuthController extends GetxController {
   // ==========================================
   // LOGIKA REGISTRASI PENGGUNA BARU
   // ==========================================
-  Future<void> registerUser(String email, String password) async {
+  Future<void> registerUser(String email, String password, {String username = ''}) async {
     if (email.trim().isEmpty || password.trim().isEmpty) {
       _showSnackbar('Peringatan', 'Email dan password tidak boleh kosong, Slurd!', Colors.orange);
       return;
@@ -22,12 +22,15 @@ class AuthController extends GetxController {
 
     try {
       isLoading.value = true;
-      
-      // Mengirim data ke Firebase Auth Server
-      await _auth.createUserWithEmailAndPassword(
+
+      final credential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
+
+      if (username.trim().isNotEmpty) {
+        await credential.user?.updateDisplayName(username.trim());
+      }
 
       _showSnackbar('Sukses', 'Akun berhasil dibuat! Silakan masuk.', Colors.green);
       

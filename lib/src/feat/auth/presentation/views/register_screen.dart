@@ -13,13 +13,27 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _isAgreed = false;
+  late final AuthController authController;
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    authController = Get.put(AuthController());
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AuthController authController = Get.put(AuthController());
-
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
 
     return Scaffold(
       backgroundColor: CustomColors.mabarBgDark, // or mabarSurfaceCard
@@ -68,7 +82,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const MabarTextField(
+            MabarTextField(
+              controller: usernameController,
               hintText: "pro_gamer_99",
               iconData: Icons.person_outline_rounded,
             ),
@@ -205,6 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         authController.registerUser(
                           emailController.text,
                           passwordController.text,
+                          username: usernameController.text,
                         );
                       },
                       child: const Text(
