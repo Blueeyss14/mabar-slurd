@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/image_card.dart';
 import 'package:mabar_slurd/src/feat/detail/presentation/views/pages/detail_screen.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/components/map_gaming.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/components/search_gaming.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/controllers/location_controller.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/widgets/gaming_place_data.dart';
 import 'package:mabar_slurd/src/feat/profile/presentation/views/pages/notification_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,12 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<String> _sorts = ['Semua', 'Terdekat', 'Populer', 'Rating'];
 
-  List<Map<String, dynamic>> get _sortedPlaces {
-    final list = [...gamingPlaceData];
+  List<Map<String, dynamic>> _applySorting(List<Map<String, dynamic>> venues) {
+    final list = [...venues];
     switch (_selectedSort) {
       case 'Terdekat':
-        list.sort((a, b) =>
-            (a['distance'] as double).compareTo(b['distance'] as double));
+        list.sort((a, b) => ((a['distance'] as num?) ?? 0)
+            .compareTo((b['distance'] as num?) ?? 0));
         break;
       case 'Populer':
         list.sort((a, b) {
@@ -37,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         break;
       case 'Rating':
-        list.sort((a, b) =>
-            (b['rating'] as double).compareTo(a['rating'] as double));
+        list.sort((a, b) => ((b['rating'] as num?) ?? 0)
+            .compareTo((a['rating'] as num?) ?? 0));
         break;
       default:
         break;
@@ -144,27 +144,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 8),
                 _buildSortChips(),
                 const SizedBox(height: 8),
-                ...List.generate(
-                  _sortedPlaces.length,
-                  (index) {
-                    final place = _sortedPlaces[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: MabarImageCard(
-                        name: place['name'],
-                        rating: place['rating'],
-                        distance: place['distance'],
-                        price: place['price'],
-                        badge: place['badge'],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const DetailScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: FirestoreService.getVenues(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Belum ada venue tersedia.',
+                          style: TextStyle(color: CustomColors.mabarTextSecondary),
+                        ),
+                      );
+                    }
+                    final places = _applySorting(snapshot.data!);
+                    return Column(
+                      children: places.map((place) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: MabarImageCard(
+                            name: place['name'] as String? ?? '-',
+                            rating: (place['rating'] as num?)?.toDouble() ?? 0,
+                            distance: (place['distance'] as num?)?.toDouble() ?? 0,
+                            price: (place['price_per_hour'] as num?)?.toInt() ?? 0,
+                            badge: place['badge'] as String?,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      DetailScreen(venue: place),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      }).toList(),
                     );
                   },
                 ),

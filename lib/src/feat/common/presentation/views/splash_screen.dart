@@ -1,6 +1,8 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
-import 'dart:async';
+import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,8 +17,12 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Menunggu 3 detik lalu berpindah ke HomeScreen
     Timer(const Duration(seconds: 3), () {
+      final user = FirebaseAuth.instance.currentUser;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(
+          builder: (context) =>
+              user != null ? const MainShell() : const LoginScreen(),
+        ),
       );
     });
   }
