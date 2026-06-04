@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "819027696392",
+    "project_id": "mabar-slurd",
+    "storage_bucket": "mabar-slurd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819027696392:android:ea7d0cb436571d9dfaaabd",
+        "android_client_info": {
+          "package_name": "com.example.mabar_slurd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKesGeInT4Nkd1O_TGraDdotMq7mPVX5A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
