@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/register_screen.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/views/home_screen.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/views/forgot_password_screen.dart';
+import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
+import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,8 +14,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _isPasswordVisible = false;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,9 +86,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-                  // EMAIL ADDRESS
+                  // EMAIL
                   Text(
-                    "EMAIL ADDRESS",
+                    "ALAMAT EMAIL",
                     style: TextStyle(
                       color: CustomColors.mabarTextSecondary,
                       fontSize: 12,
@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _buildTextField(
+                  const MabarTextField(
                     hintText: "gaming@example.com",
                     iconData: Icons.mail_outline_rounded,
                   ),
@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "PASSWORD",
+                        "KATA SANDI",
                         style: TextStyle(
                           color: CustomColors.mabarTextSecondary,
                           fontSize: 12,
@@ -117,18 +117,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           letterSpacing: 1.0,
                         ),
                       ),
-                      Text(
-                        "LUPA?",
-                        style: TextStyle(
-                          color: CustomColors.mabarPurple,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "LUPA?",
+                          style: TextStyle(
+                            color: CustomColors.mabarPurple,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  _buildTextField(
+                  const MabarTextField(
                     hintText: "••••••••",
                     iconData: Icons.lock_outline_rounded,
                     isPassword: true,
@@ -165,12 +176,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
+                            builder: (context) => const MainShell(),
                           ),
                         );
                       },
                       child: const Text(
-                        "LOGIN SEKARANG",
+                        "MASUK SEKARANG",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -194,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          "ATAU LOGIN DENGAN",
+                          "ATAU MASUK DENGAN",
                           style: TextStyle(
                             color: CustomColors.mabarTextTertiary,
                             fontSize: 10,
@@ -271,63 +282,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String hintText,
-    required IconData iconData,
-    bool isPassword = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: CustomColors.mabarSurfaceInput,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: CustomColors.mabarBorderSubtle,
-          width: 1,
-        ),
-      ),
-      child: TextField(
-        obscureText: isPassword && !_isPasswordVisible,
-        style: const TextStyle(
-          color: CustomColors.mabarTextPrimary,
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: CustomColors.mabarTextTertiary,
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            iconData,
-            color: CustomColors.mabarPurple,
-            size: 20,
-          ),
-          suffixIcon: isPassword
-              ? GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
-                  child: Icon(
-                    _isPasswordVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: CustomColors.mabarTextTertiary,
-                    size: 20,
-                  ),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
         ),
       ),
     );

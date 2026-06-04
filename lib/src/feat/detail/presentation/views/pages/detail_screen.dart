@@ -224,7 +224,7 @@ class DetailScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "5 Slots",
+                          "5 Slot",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
