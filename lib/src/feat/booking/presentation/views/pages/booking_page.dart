@@ -1,10 +1,8 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/core/notification_service.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
-import 'package:mabar_slurd/shared/buttons/mabar_button.dart';
+import 'package:mabar_slurd/src/core/notification_service.dart';
+import 'package:mabar_slurd/src/res/custom_colors.dart';
+import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/components/calendar_pop.dart';
-import 'package:mabar_slurd/src/feat/booking/presentation/widgets/durasi.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/perangkat.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
 import 'package:mabar_slurd/src/feat/history/presentation/views/page/booking_history_page.dart';
@@ -19,20 +17,12 @@ class BookingPage extends StatefulWidget {
 class _BookingPageState extends State<BookingPage> {
   int? selectedJam;
   bool isCalendarPoping = false;
-  String calendarr = 'Calendar';
+  String calendar = 'Calendar';
   double _sliderDuration = 1.0;
 
   void selectJamFunc(int index) {
     setState(() {
       selectedJam = index;
-    });
-  }
-
-  int? selectedDuration;
-
-  void selectDurFunc(int index) {
-    setState(() {
-      selectedDuration = index;
     });
   }
 
@@ -42,6 +32,14 @@ class _BookingPageState extends State<BookingPage> {
     setState(() {
       selectedDevice = index;
     });
+  }
+
+  String _formatTanggal(DateTime date) {
+    const namaBulan = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    return '${date.day} ${namaBulan[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -98,7 +96,7 @@ class _BookingPageState extends State<BookingPage> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              calendarr,
+                              calendar,
                               style: const TextStyle(
                                 fontSize: 20,
                                 color: CustomColors.mabarTextSecondary,
@@ -186,38 +184,6 @@ class _BookingPageState extends State<BookingPage> {
                         });
                       },
                     ),
-                    // Wrap(
-                    //   alignment: WrapAlignment.start,
-                    //   children: List.generate(
-                    //     durasi.length,
-                    //     (index) => FractionallySizedBox(
-                    //       widthFactor: 1 / 4,
-                    //       child: GestureDetector(
-                    //         onTap: () => selectDurFunc(index),
-                    //         child: Container(
-                    //           alignment: Alignment.center,
-                    //           margin: const EdgeInsets.all(5),
-                    //           padding: const EdgeInsets.all(15),
-                    //           decoration: BoxDecoration(
-                    //             borderRadius: BorderRadius.circular(14),
-                    //             color: selectedDuration == index
-                    //                 ? CustomColors.mabarBorderFocus
-                    //                 : CustomColors.mabarSurfaceCard,
-                    //           ),
-                    //           child: AutoSizeText(
-                    //             durasi[index]['durasi'],
-                    //             maxLines: 1,
-                    //             minFontSize: 6,
-                    //             style: const TextStyle(
-                    //               // fontSize: 18,
-                    //               color: CustomColors.mabarTextPrimary,
-                    //             ),
-                    //           ),
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                     const SizedBox(height: 20),
                     const Text(
                       "Pilih Perangkat",
@@ -444,7 +410,9 @@ class _BookingPageState extends State<BookingPage> {
                 });
               },
               onDateChanged: (value) {
-                calendarr = value.toString().split(' ')[0];
+                setState(() {
+                  calendar = _formatTanggal(value);
+                });
               },
             ),
         ],
@@ -495,12 +463,15 @@ void _popUpDialogConfirm(BuildContext context) {
 }
 
 void _prosesBookingBerhasil(BuildContext context) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final navigator = Navigator.of(context);
+
   await NotificationService.showNotification(
     title: "Booking Berhasil!",
     body: "Tempat kamu sudah aman. Cek detailnya di menu Riwayat.",
   );
 
-  ScaffoldMessenger.of(context).showSnackBar(
+  messenger.showSnackBar(
     const SnackBar(
       content: Text(
         'Pesanan berhasil dibuat!',
@@ -513,8 +484,7 @@ void _prosesBookingBerhasil(BuildContext context) async {
     ),
   );
 
-  Navigator.push(
-    context,
+  navigator.push(
     MaterialPageRoute(builder: (context) => const BookingHistoryPage()),
   );
 }
