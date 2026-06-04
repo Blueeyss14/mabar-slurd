@@ -34,9 +34,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: CustomColors.mabarBgDark, // or mabarSurfaceCard
+      backgroundColor: CustomColors.mabarBgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -87,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hintText: "pro_gamer_99",
               iconData: Icons.person_outline_rounded,
             ),
-            
+
             const SizedBox(height: 20),
 
             // EMAIL
@@ -191,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             // REGISTER BUTTON
             Obx(() => authController.isLoading.value
-                ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight )) 
+                ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight))
                 : Container(
                     width: double.infinity,
                     height: 56,
@@ -216,7 +215,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       onPressed: () {
-                        // Back to Login or Auto Login
                         authController.registerUser(
                           emailController.text,
                           passwordController.text,
@@ -233,7 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
-                ),
+            ),
 
             const SizedBox(height: 40),
 
@@ -249,9 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
+                  onTap: () => Navigator.pop(context),
                   child: const Text(
                     "MASUK KEMBALI",
                     style: TextStyle(

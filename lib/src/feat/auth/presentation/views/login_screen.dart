@@ -5,7 +5,6 @@ import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/register_screen.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/forgot_password_screen.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,11 +15,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   final AuthController authController = Get.put(AuthController());
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
@@ -159,9 +158,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     iconData: Icons.lock_outline_rounded,
                     isPassword: true,
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // LOGIN BUTTON
                   Obx(() => authController.isLoading.value
                       ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight))
@@ -189,7 +188,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             onPressed: () {
-                              // Navigate to Home
                               authController.loginUser(
                                 emailController.text,
                                 passwordController.text,
