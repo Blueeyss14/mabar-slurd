@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/views/home_screen.dart';
+import 'package:get/get.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:mabar_slurd/src/core/notification_service.dart';
+import 'package:mabar_slurd/src/feat/common/presentation/views/splash_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  await NotificationService.init();
+
   runApp(const MyApp());
 }
 
@@ -10,9 +21,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return const GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: SplashScreen(),
     );
   }
 }
