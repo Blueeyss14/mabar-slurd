@@ -5,7 +5,10 @@ class FirestoreService {
   static final _db = FirebaseFirestore.instance;
 
   static Stream<List<Map<String, dynamic>>> getVenues() {
-    return _db.collection('venues').snapshots().map(
+    return _db
+        .collection('venues')
+        .snapshots()
+        .map(
           (snapshot) => snapshot.docs
               .map((doc) => {'id': doc.id, ...doc.data()})
               .toList(),
@@ -19,8 +22,6 @@ class FirestoreService {
     int totalSlots,
   ) async {
     try {
-      // Hanya pakai equality filter di Firestore, overlap dicek client-side
-      // supaya tidak butuh composite index
       final snapshot = await _db
           .collection('bookings')
           .where('venue_id', isEqualTo: venueId)
@@ -30,12 +31,12 @@ class FirestoreService {
       final overlapping = snapshot.docs.where((doc) {
         final existingStart = (doc['start_time'] as Timestamp).toDate();
         final existingEnd = (doc['end_time'] as Timestamp).toDate();
-        return existingStart.isBefore(endTime) && existingEnd.isAfter(startTime);
+        return existingStart.isBefore(endTime) &&
+            existingEnd.isAfter(startTime);
       }).length;
 
       return totalSlots - overlapping;
     } catch (_) {
-      // Jika gagal cek (misal permission), anggap semua slot masih tersedia
       return totalSlots;
     }
   }
@@ -50,8 +51,12 @@ class FirestoreService {
     required int totalPrice,
     required int totalSlots,
   }) async {
-    final available =
-        await getAvailableSlots(venueId, startTime, endTime, totalSlots);
+    final available = await getAvailableSlots(
+      venueId,
+      startTime,
+      endTime,
+      totalSlots,
+    );
     if (available <= 0) return false;
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
@@ -70,5 +75,24 @@ class FirestoreService {
     });
 
     return true;
+  }
+
+  /// Ambil riwayat booking milik user yang sedang login,
+  /// diurutkan dari yang terbaru.
+  static Stream<List<Map<String, dynamic>>> getBookingHistory() {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return const Stream.empty();
+
+    return _db
+        .collection('bookings')
+        .where('user_id', isEqualTo: userId)
+        .orderBy('created_at', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+            return {'id': doc.id, ...data};
+          }).toList(),
+        );
   }
 }
