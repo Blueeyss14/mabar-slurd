@@ -40,7 +40,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -61,7 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               "Bergabung dengan komunitas gamers!",
               style: TextStyle(
                 color: CustomColors.mabarTextSecondary,
@@ -71,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 40),
 
             // USERNAME
-            Text(
+            const Text(
               "NAMA PENGGUNA",
               style: TextStyle(
                 color: CustomColors.mabarTextSecondary,
@@ -90,7 +94,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
 
             // EMAIL
-            Text(
+            const Text(
               "EMAIL",
               style: TextStyle(
                 color: CustomColors.mabarTextSecondary,
@@ -109,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
 
             // PASSWORD
-            Text(
+            const Text(
               "KATA SANDI",
               style: TextStyle(
                 color: CustomColors.mabarTextSecondary,
@@ -143,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       });
                     },
                     activeColor: CustomColors.mabarPurple,
-                    side: BorderSide(
+                    side: const BorderSide(
                       color: CustomColors.mabarBorderSubtle,
                       width: 1.5,
                     ),
@@ -155,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: RichText(
-                    text: TextSpan(
+                    text: const TextSpan(
                       text: "Saya setuju dengan ",
                       style: TextStyle(
                         color: CustomColors.mabarTextSecondary,
@@ -170,7 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const TextSpan(text: "serta "),
+                        TextSpan(text: "serta "),
                         TextSpan(
                           text: "Kebijakan Privasi ",
                           style: TextStyle(
@@ -178,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const TextSpan(text: "MabarKeun."),
+                        TextSpan(text: "MabarKeun."),
                       ],
                     ),
                   ),
@@ -189,48 +193,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 40),
 
             // REGISTER BUTTON
-            Obx(() => authController.isLoading.value
-                ? const Center(child: CircularProgressIndicator(color: CustomColors.mabarPurpleLight))
-                : Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: CustomColors.mabarPurpleLight,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: CustomColors.mabarPurple.withValues(alpha: 0.4),
-                          spreadRadius: 2,
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+            Obx(
+              () => authController.isLoading.value
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: CustomColors.mabarPurpleLight,
+                      ),
+                    )
+                  : Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: CustomColors.mabarPurpleLight,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: CustomColors.mabarPurple.withValues(
+                              alpha: 0.4,
+                            ),
+                            spreadRadius: 2,
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                        onPressed: () {
+                          authController.registerUser(
+                            emailController.text,
+                            passwordController.text,
+                            username: usernameController.text,
+                          );
+                        },
+                        child: const Text(
+                          "BUAT AKUN SEKARANG",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      onPressed: () {
-                        authController.registerUser(
-                          emailController.text,
-                          passwordController.text,
-                          username: usernameController.text,
-                        );
-                      },
-                      child: const Text(
-                        "BUAT AKUN SEKARANG",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
-                  ),
             ),
 
             const SizedBox(height: 40),
@@ -239,7 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
+                const Text(
                   "Sudah punya akun? ",
                   style: TextStyle(
                     color: CustomColors.mabarTextSecondary,
