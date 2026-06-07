@@ -2,21 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class BookingHistoryDetailPage extends StatelessWidget {
+  final String bookingId;
   final String title;
   final String subTitle;
   final String date;
   final String time;
   final int total;
   final String status;
+  final int durationHours;
 
   const BookingHistoryDetailPage({
     super.key,
+    required this.bookingId,
     required this.title,
     required this.subTitle,
     required this.date,
     required this.time,
     required this.total,
     required this.status,
+    required this.durationHours,
   });
 
   String _formatRupiah(int value) {
@@ -42,10 +46,15 @@ class BookingHistoryDetailPage extends StatelessWidget {
     }
   }
 
+  /// ID pendek untuk ditampilkan: 8 karakter pertama dari doc ID Firestore
+  String get _shortBookingId =>
+      '#${bookingId.substring(0, bookingId.length.clamp(0, 8)).toUpperCase()}';
+
   @override
   Widget build(BuildContext context) {
+    // total dari Firestore sudah dalam satuan penuh (bukan ribuan)
     final harga = total * 1000;
-    final biayaLayanan = 2000;
+    const biayaLayanan = 2000;
     final totalBayar = harga + biayaLayanan;
 
     return Scaffold(
@@ -111,9 +120,9 @@ class BookingHistoryDetailPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            "ID Booking: #MBR2026",
-            style: TextStyle(
+          Text(
+            'ID Booking: $_shortBookingId',
+            style: const TextStyle(
               fontSize: 13,
               color: CustomColors.mabarTextSecondary,
             ),
@@ -187,6 +196,12 @@ class BookingHistoryDetailPage extends StatelessWidget {
           _buildRow(Icons.access_time_rounded, "Waktu", time),
           const SizedBox(height: 16),
           _buildRow(Icons.devices_outlined, "Perangkat", subTitle),
+          const SizedBox(height: 16),
+          _buildRow(
+            Icons.hourglass_bottom_rounded,
+            "Durasi",
+            '$durationHours Jam',
+          ),
         ],
       ),
     );
@@ -203,7 +218,10 @@ class BookingHistoryDetailPage extends StatelessWidget {
         children: [
           _buildPaymentRow("Harga Sewa", "Rp ${_formatRupiah(harga)}"),
           const SizedBox(height: 12),
-          _buildPaymentRow("Biaya Layanan", "Rp ${_formatRupiah(biayaLayanan)}"),
+          _buildPaymentRow(
+            "Biaya Layanan",
+            "Rp ${_formatRupiah(biayaLayanan)}",
+          ),
           const SizedBox(height: 14),
           const Divider(height: 1, color: CustomColors.mabarBorderSubtle),
           const SizedBox(height: 14),

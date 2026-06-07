@@ -1,18 +1,10 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-<<<<<<< HEAD:lib/src/feat/Detail/presentation/views/pages/detail_screen.dart
-import 'package:mabar_slurd/res/assets.dart';
-import 'package:mabar_slurd/res/custom_colors.dart';
-import 'package:mabar_slurd/shared/buttons/mabar_button.dart';
-import 'package:mabar_slurd/src/feat/Detail/presentation/widgets/detail_page_widgets.dart';
-import 'package:mabar_slurd/screens/bookingscreen.dart';
-=======
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/detail/presentation/widgets/detail_page_widgets.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/pages/booking_page.dart';
->>>>>>> origin/main:lib/src/feat/detail/presentation/views/pages/detail_screen.dart
 
 class DetailScreen extends StatelessWidget {
   final Map<String, dynamic> venue;
@@ -72,10 +64,7 @@ class DetailScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
-                        colors: [
-                          CustomColors.mabarBgDark,
-                          Colors.transparent,
-                        ],
+                        colors: [CustomColors.mabarBgDark, Colors.transparent],
                       ),
                     ),
                   ),
@@ -86,7 +75,9 @@ class DetailScreen extends StatelessWidget {
                     child: SafeArea(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         margin: const EdgeInsets.only(top: 8, right: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
@@ -106,8 +97,10 @@ class DetailScreen extends StatelessWidget {
                 SafeArea(
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -278,14 +271,7 @@ class DetailScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-<<<<<<< HEAD:lib/src/feat/Detail/presentation/views/pages/detail_screen.dart
-                        builder: (context) => const BookingScreen(
-                          placeName: 'GG Arena',
-                          pricePerHour: 15000,
-                        ),
-=======
                         builder: (context) => BookingPage(venue: venue),
->>>>>>> origin/main:lib/src/feat/detail/presentation/views/pages/detail_screen.dart
                       ),
                     ),
                     text: "Booking Sekarang",
