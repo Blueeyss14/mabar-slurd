@@ -64,10 +64,7 @@ class DetailScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
-                        colors: [
-                          CustomColors.mabarBgDark,
-                          Colors.transparent,
-                        ],
+                        colors: [CustomColors.mabarBgDark, Colors.transparent],
                       ),
                     ),
                   ),
@@ -78,7 +75,9 @@ class DetailScreen extends StatelessWidget {
                     child: SafeArea(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         margin: const EdgeInsets.only(top: 8, right: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
@@ -98,8 +97,10 @@ class DetailScreen extends StatelessWidget {
                 SafeArea(
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
