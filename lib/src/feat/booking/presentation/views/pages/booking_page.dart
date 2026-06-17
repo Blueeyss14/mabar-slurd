@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/core/notification_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
@@ -26,14 +27,6 @@ class _BookingPageState extends State<BookingPage> {
   double _sliderDuration = 1.0;
   int? selectedDevice;
   bool _isLoading = false;
-
-  String _formatTanggal(DateTime date) {
-    const namaBulan = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-    ];
-    return '${date.day} ${namaBulan[date.month - 1]} ${date.year}';
-  }
 
   DateTime? get _startTime {
     if (selectedDate == null || selectedJam == null) return null;
@@ -427,7 +420,7 @@ class _BookingPageState extends State<BookingPage> {
                           _summaryRow(
                             'Tanggal',
                             selectedDate != null
-                                ? _formatTanggal(selectedDate!)
+                                ? Formatters.tanggal(selectedDate!)
                                 : '-',
                           ),
                           _summaryRow('Waktu', _timeRangeText),
@@ -487,7 +480,7 @@ class _BookingPageState extends State<BookingPage> {
               onDateChanged: (value) {
                 setState(() {
                   selectedDate = value;
-                  calendarLabel = _formatTanggal(value);
+                  calendarLabel = Formatters.tanggal(value);
                   isCalendarPoping = false;
                 });
               },
