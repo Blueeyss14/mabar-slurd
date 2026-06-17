@@ -5,7 +5,7 @@ import 'package:mabar_slurd/src/core/notification_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/components/calendar_pop.dart';
-import 'package:mabar_slurd/src/feat/booking/presentation/widgets/perangkat.dart';
+import 'package:mabar_slurd/src/feat/booking/presentation/widgets/komputer.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
 import 'package:get/get.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
@@ -25,7 +25,7 @@ class _BookingPageState extends State<BookingPage> {
   DateTime? selectedDate;
   String calendarLabel = 'Pilih Tanggal';
   double _sliderDuration = 1.0;
-  int? selectedDevice;
+  int? selectedKomputer;
   bool _isLoading = false;
 
   DateTime? get _startTime {
@@ -79,14 +79,13 @@ class _BookingPageState extends State<BookingPage> {
       _showError('Pilih jam mulai dulu!');
       return;
     }
-    if (selectedDevice == null) {
-      _showError('Pilih perangkat dulu!');
+    if (selectedKomputer == null) {
+      _showError('Pilih komputer dulu!');
       return;
     }
 
     if (widget.venue['id'] == null ||
-        widget.venue['price_per_hour'] == null ||
-        widget.venue['total_slots'] == null) {
+        widget.venue['price_per_hour'] == null) {
       _showError('Data tempat tidak lengkap. Pilih dari halaman Beranda ya!');
       return;
     }
@@ -98,6 +97,7 @@ class _BookingPageState extends State<BookingPage> {
 
     setState(() => _isLoading = true);
 
+    final komputer = komputerList[selectedKomputer!];
     bool success = false;
     try {
       success = await FirestoreService.createBooking(
@@ -106,9 +106,9 @@ class _BookingPageState extends State<BookingPage> {
         startTime: _startTime!,
         endTime: _endTime!,
         durationHours: _sliderDuration.round(),
-        deviceType: perangkat[selectedDevice!]['label'] as String,
+        deviceType: komputer['tier'] as String,
+        computerId: komputer['id'] as String,
         totalPrice: _totalPrice,
-        totalSlots: (widget.venue['total_slots'] as num).toInt(),
       ).timeout(const Duration(seconds: 10));
     } catch (e) {
       if (mounted) _showError('Error: $e');
@@ -152,7 +152,7 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   void _showConfirmDialog() {
-    if (selectedDate == null || selectedJam == null || selectedDevice == null) {
+    if (selectedDate == null || selectedJam == null || selectedKomputer == null) {
       _showError('Lengkapi semua pilihan dulu!');
       return;
     }
@@ -174,22 +174,39 @@ class _BookingPageState extends State<BookingPage> {
             style: TextStyle(color: Colors.white70),
           ),
           actionsPadding:
-              const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              const EdgeInsets.fromLTRB(15, 0, 15, 15),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child:
-                  const Text('Kembali', style: TextStyle(color: Colors.grey)),
-            ),
-            SizedBox(
-              width: 120,
-              child: MabarButton(
-                text: 'Gas Poll!',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _handleBookingConfirmed();
-                },
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: const BorderSide(
+                          color: CustomColors.mabarBorderSubtle,
+                        ),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text(
+                      'Kembali',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: MabarButton(
+                    text: 'Gas Poll!',
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _handleBookingConfirmed();
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -346,7 +363,7 @@ class _BookingPageState extends State<BookingPage> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      "Pilih Perangkat",
+                      "Pilih Komputer",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -357,37 +374,58 @@ class _BookingPageState extends State<BookingPage> {
                     Wrap(
                       alignment: WrapAlignment.start,
                       children: List.generate(
-                        perangkat.length,
+                        komputerList.length,
                         (index) => FractionallySizedBox(
                           widthFactor: 1 / 2,
                           child: GestureDetector(
                             onTap: () =>
-                                setState(() => selectedDevice = index),
+                                setState(() => selectedKomputer = index),
                             child: Container(
-                              alignment: Alignment.center,
                               margin: const EdgeInsets.all(5),
-                              padding: const EdgeInsets.all(15),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
-                                color: selectedDevice == index
+                                color: selectedKomputer == index
                                     ? CustomColors.mabarBorderFocus
                                     : CustomColors.mabarSurfaceCard,
+                                border: Border.all(
+                                  color: selectedKomputer == index
+                                      ? CustomColors.mabarBorderFocus
+                                      : CustomColors.mabarBorderSubtle,
+                                ),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              child: Row(
                                 children: [
                                   Image.asset(
-                                    perangkat[index]['icon'],
-                                    width: 40,
+                                    komputerList[index]['icon'],
+                                    width: 32,
                                     color: CustomColors.mabarTextPrimary,
                                   ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    perangkat[index]['label'],
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: CustomColors.mabarTextPrimary,
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          komputerList[index]['name'],
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                            color: CustomColors.mabarTextPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          komputerList[index]['spec'],
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                CustomColors.mabarTextSecondary,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -425,10 +463,15 @@ class _BookingPageState extends State<BookingPage> {
                           ),
                           _summaryRow('Waktu', _timeRangeText),
                           _summaryRow(
-                            'Perangkat',
-                            selectedDevice != null
-                                ? perangkat[selectedDevice!]['label'] as String
+                            'Komputer',
+                            selectedKomputer != null
+                                ? '${komputerList[selectedKomputer!]['name']} (${komputerList[selectedKomputer!]['spec']})'
                                 : '-',
+                          ),
+                          _summaryRow('Durasi', '${_sliderDuration.round()} Jam'),
+                          _summaryRow(
+                            'Harga / jam',
+                            'Rp ${Formatters.rupiah(((widget.venue['price_per_hour'] as num?)?.toInt() ?? 0) * 1000)}',
                           ),
                           const Divider(
                               color: Color.fromARGB(113, 94, 93, 112)),
@@ -447,7 +490,7 @@ class _BookingPageState extends State<BookingPage> {
                                   ),
                                 ),
                                 Text(
-                                  '${_totalPrice}K IDR',
+                                  'Rp ${Formatters.rupiah(_totalPrice * 1000)}',
                                   style: const TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
