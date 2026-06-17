@@ -310,17 +310,25 @@ class _BookingPageState extends State<BookingPage> {
                             child: Container(
                               alignment: Alignment.center,
                               margin: const EdgeInsets.all(4),
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
                                 color: selectedJam == index
                                     ? CustomColors.mabarBorderFocus
                                     : CustomColors.mabarSurfaceCard,
+                                border: Border.all(
+                                  color: selectedJam == index
+                                      ? CustomColors.mabarBorderFocus
+                                      : CustomColors.mabarBorderSubtle,
+                                ),
                               ),
                               child: Text(
                                 pilihJam[index]['jam'],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
+                                  fontWeight: selectedJam == index
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                   color: CustomColors.mabarTextPrimary,
                                 ),
                               ),
@@ -407,14 +415,25 @@ class _BookingPageState extends State<BookingPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          komputerList[index]['name'],
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                            color: CustomColors.mabarTextPrimary,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              komputerList[index]['name'],
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                color: CustomColors
+                                                    .mabarTextPrimary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            _tierBadge(
+                                              komputerList[index]['tier']
+                                                  as String,
+                                            ),
+                                          ],
                                         ),
+                                        const SizedBox(height: 2),
                                         Text(
                                           komputerList[index]['spec'],
                                           maxLines: 1,
@@ -529,6 +548,28 @@ class _BookingPageState extends State<BookingPage> {
               },
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _tierBadge(String tier) {
+    final colors = <String, Color>{
+      'Reguler': const Color(0xFF6B7280),
+      'Gaming': const Color(0xFF16A34A),
+      'VIP': const Color(0xFFD97706),
+      'Console': CustomColors.mabarCyan,
+    };
+    final color = colors[tier] ?? const Color(0xFF6B7280);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.55), width: 0.8),
+      ),
+      child: Text(
+        tier,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
       ),
     );
   }

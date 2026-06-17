@@ -18,7 +18,6 @@ class DetailScreen extends StatelessWidget {
     final rating = (venue['rating'] as num?)?.toDouble() ?? 0.0;
     final distance = (venue['distance'] as num?)?.toDouble() ?? 0.0;
     final pricePerHour = (venue['price_per_hour'] as num?)?.toInt() ?? 0;
-    final totalSlots = (venue['total_slots'] as num?)?.toInt() ?? 0;
     final badge = venue['badge'] as String?;
 
     return Scaffold(
@@ -246,19 +245,19 @@ class DetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       color: CustomColors.mabarSurfaceCard,
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Total Slot',
+                        Text(
+                          'Ketersediaan',
                           style: TextStyle(
                             fontSize: 20,
                             color: CustomColors.mabarTextSecondary,
                           ),
                         ),
                         Text(
-                          "$totalSlots Slot",
-                          style: const TextStyle(
+                          '15 Komputer',
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                             color: CustomColors.mabarCyan,
