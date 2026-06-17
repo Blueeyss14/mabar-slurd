@@ -233,6 +233,52 @@ class FirestoreService {
     }, SetOptions(merge: true));
   }
 
+  /// Buat venue baru milik admin yang sedang login.
+  /// Mengembalikan id dokumen baru, atau null bila gagal.
+  static Future<String?> createVenue({
+    required String name,
+    required int pricePerHour,
+    double rating = 0,
+    double distance = 0,
+    String? badge,
+  }) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return null;
+    try {
+      final ref = await _db.collection('venues').add({
+        'name': name.trim(),
+        'price_per_hour': pricePerHour,
+        'rating': rating,
+        'distance': distance,
+        'badge': (badge != null && badge.trim().isNotEmpty) ? badge.trim() : null,
+        'owner_uid': uid,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      return ref.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Perbarui info venue. Hanya field yang dikirim yang diubah.
+  static Future<bool> updateVenue({
+    required String venueId,
+    required String name,
+    required int pricePerHour,
+    String? badge,
+  }) async {
+    try {
+      await _db.collection('venues').doc(venueId).update({
+        'name': name.trim(),
+        'price_per_hour': pricePerHour,
+        'badge': (badge != null && badge.trim().isNotEmpty) ? badge.trim() : null,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Daftar venue milik admin yang sedang login (owner_uid == uid).
   static Stream<List<Map<String, dynamic>>> getMyVenues() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
