@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_list_card.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
@@ -31,27 +32,6 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     if (DateTime.now().isAfter(endTime)) return 'Selesai';
     return 'Berlangsung';
   }
-
-  String _formatTanggal(DateTime date) {
-    const namaBulan = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    return '${date.day} ${namaBulan[date.month - 1]} ${date.year}';
-  }
-
-  String _formatJam(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -144,9 +124,9 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                         return MabarListCard(
                           title: item['venue_name'] as String? ?? '-',
                           subTitle: item['device_type'] as String? ?? '-',
-                          date: _formatTanggal(startTime),
+                          date: Formatters.tanggal(startTime),
                           time:
-                              '${_formatJam(startTime)} - ${_formatJam(endTime)}',
+                              '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
                           total: (item['total_price'] as num).toInt(),
                           status: statusLabel,
                           onTap: () => _goToDetail(
@@ -181,8 +161,8 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           bookingId: item['id'] as String,
           title: item['venue_name'] as String? ?? '-',
           subTitle: item['device_type'] as String? ?? '-',
-          date: _formatTanggal(startTime),
-          time: '${_formatJam(startTime)} - ${_formatJam(endTime)}',
+          date: Formatters.tanggal(startTime),
+          time: '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
           total: (item['total_price'] as num).toInt(),
           status: statusLabel,
           durationHours: (item['duration_hours'] as num?)?.toInt() ?? 1,

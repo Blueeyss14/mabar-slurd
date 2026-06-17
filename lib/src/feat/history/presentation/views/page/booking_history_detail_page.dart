@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class BookingHistoryDetailPage extends StatelessWidget {
@@ -23,18 +24,6 @@ class BookingHistoryDetailPage extends StatelessWidget {
     required this.status,
     required this.durationHours,
   });
-
-  String _formatRupiah(int value) {
-    final digits = value.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(digits[i]);
-    }
-    return buffer.toString();
-  }
 
   ({Color color, IconData icon}) get _statusStyle {
     switch (status) {
@@ -222,11 +211,11 @@ class BookingHistoryDetailPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildPaymentRow("Harga Sewa", "Rp ${_formatRupiah(harga)}"),
+          _buildPaymentRow("Harga Sewa", "Rp ${Formatters.rupiah(harga)}"),
           const SizedBox(height: 12),
           _buildPaymentRow(
             "Biaya Layanan",
-            "Rp ${_formatRupiah(biayaLayanan)}",
+            "Rp ${Formatters.rupiah(biayaLayanan)}",
           ),
           const SizedBox(height: 14),
           const Divider(height: 1, color: CustomColors.mabarBorderSubtle),
@@ -243,7 +232,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
                 ),
               ),
               Text(
-                "Rp ${_formatRupiah(totalBayar)}",
+                "Rp ${Formatters.rupiah(totalBayar)}",
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
