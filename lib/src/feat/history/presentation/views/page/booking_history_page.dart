@@ -121,9 +121,15 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                           endTime,
                         );
 
+                        final computerId = item['computer_id'] as String?;
+                        final deviceType = item['device_type'] as String?;
+                        final subTitleText = (computerId != null && deviceType != null)
+                            ? '$computerId · $deviceType'
+                            : computerId ?? deviceType ?? '-';
+
                         return MabarListCard(
                           title: item['venue_name'] as String? ?? '-',
-                          subTitle: item['device_type'] as String? ?? '-',
+                          subTitle: subTitleText,
                           date: Formatters.tanggal(startTime),
                           time:
                               '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
