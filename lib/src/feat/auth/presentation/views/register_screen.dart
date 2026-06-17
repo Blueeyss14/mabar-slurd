@@ -13,6 +13,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _isAgreed = false;
+  bool _isAdmin = false;
   late final AuthController authController;
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -30,6 +31,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  Widget _accountTypeOption({
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: selected
+                ? CustomColors.mabarPurple.withValues(alpha: 0.18)
+                : CustomColors.mabarSurfaceCard,
+            border: Border.all(
+              color: selected
+                  ? CustomColors.mabarPurpleLight
+                  : CustomColors.mabarBorderSubtle,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon,
+                size: 22,
+                color: selected
+                    ? CustomColors.mabarPurpleLight
+                    : CustomColors.mabarTextSecondary,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: selected
+                      ? CustomColors.mabarTextPrimary
+                      : CustomColors.mabarTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: CustomColors.mabarTextTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -72,7 +134,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 fontSize: 14,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 28),
+
+            // TIPE AKUN
+            const Text(
+              "TIPE AKUN",
+              style: TextStyle(
+                color: CustomColors.mabarTextSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _accountTypeOption(
+                  label: "Gamer",
+                  subtitle: "Cari & booking",
+                  icon: Icons.sports_esports,
+                  selected: !_isAdmin,
+                  onTap: () => setState(() => _isAdmin = false),
+                ),
+                const SizedBox(width: 12),
+                _accountTypeOption(
+                  label: "Admin Warnet",
+                  subtitle: "Kelola warnet",
+                  icon: Icons.storefront,
+                  selected: _isAdmin,
+                  onTap: () => setState(() => _isAdmin = true),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 28),
 
             // USERNAME
             const Text(
@@ -230,6 +325,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             emailController.text,
                             passwordController.text,
                             username: usernameController.text,
+                            isAdmin: _isAdmin,
                           );
                         },
                         child: const Text(
