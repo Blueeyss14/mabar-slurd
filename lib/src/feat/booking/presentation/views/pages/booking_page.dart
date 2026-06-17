@@ -28,6 +28,10 @@ class _BookingPageState extends State<BookingPage> {
   int? selectedKomputer;
   bool _isLoading = false;
 
+  /// id komputer yang sudah dibooking di rentang waktu yang sedang dipilih.
+  Set<String> _bookedComputers = {};
+  bool _loadingAvail = false;
+
   // ─── computed ──────────────────────────────────────────────────────────────
 
   DateTime? get _startTime {
@@ -59,6 +63,32 @@ class _BookingPageState extends State<BookingPage> {
       (widget.venue['price_per_hour'] as num?)?.toInt() ?? 0;
 
   int get _totalPrice => _pricePerHour * _durasiJam;
+
+  /// Muat ulang daftar komputer yang sudah dibooking untuk rentang waktu aktif.
+  /// Dipanggil setiap kali tanggal / jam / durasi berubah.
+  Future<void> _refreshAvailability() async {
+    final start = _startTime;
+    final end = _endTime;
+    final venueId = widget.venue['id'] as String?;
+    if (start == null || end == null || venueId == null) {
+      setState(() => _bookedComputers = {});
+      return;
+    }
+
+    setState(() => _loadingAvail = true);
+    final booked =
+        await FirestoreService.getBookedComputers(venueId, start, end);
+    if (!mounted) return;
+    setState(() {
+      _bookedComputers = booked;
+      _loadingAvail = false;
+      // Jika komputer yang sedang dipilih ternyata sudah dibooking, batalkan.
+      if (selectedKomputer != null &&
+          booked.contains(komputerList[selectedKomputer!]['id'])) {
+        selectedKomputer = null;
+      }
+    });
+  }
 
   // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -379,6 +409,7 @@ class _BookingPageState extends State<BookingPage> {
                   calendarLabel = Formatters.tanggal(value);
                   isCalendarPoping = false;
                 });
+                _refreshAvailability();
               },
             ),
         ],
@@ -519,7 +550,10 @@ class _BookingPageState extends State<BookingPage> {
           return FractionallySizedBox(
             widthFactor: 1 / 4,
             child: GestureDetector(
-              onTap: () => setState(() => selectedJam = index),
+              onTap: () {
+                setState(() => selectedJam = index);
+                _refreshAvailability();
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 alignment: Alignment.center,
@@ -576,6 +610,7 @@ class _BookingPageState extends State<BookingPage> {
             label: '$_durasiJam Jam',
             onChanged: (value) =>
                 setState(() => _durasiJam = value.round()),
+            onChangeEnd: (_) => _refreshAvailability(),
           ),
         ),
         const Padding(
@@ -616,6 +651,7 @@ class _BookingPageState extends State<BookingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _availabilityHint(),
         _deviceSectionHeader(Icons.computer_outlined, 'PC', pcIndices.length),
         const SizedBox(height: 8),
         _buildKomputerGrid(pcIndices),
@@ -625,6 +661,47 @@ class _BookingPageState extends State<BookingPage> {
         const SizedBox(height: 8),
         _buildKomputerGrid(consoleIndices),
       ],
+    );
+  }
+
+  /// Banner status ketersediaan di atas grid perangkat.
+  Widget _availabilityHint() {
+    late final IconData icon;
+    late final String text;
+    late final Color color;
+
+    if (_startTime == null) {
+      icon = Icons.info_outline;
+      text = 'Pilih tanggal & jam dulu untuk lihat unit yang tersedia.';
+      color = CustomColors.mabarTextSecondary;
+    } else if (_loadingAvail) {
+      icon = Icons.sync;
+      text = 'Mengecek ketersediaan…';
+      color = CustomColors.mabarTextSecondary;
+    } else if (_bookedComputers.isEmpty) {
+      icon = Icons.check_circle_outline;
+      text = 'Semua unit tersedia di jam ini.';
+      color = CustomColors.mabarGreen;
+    } else {
+      icon = Icons.event_busy_outlined;
+      text = '${_bookedComputers.length} unit sudah dibooking di jam ini.';
+      color = CustomColors.mabarYellow;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 12, color: color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -677,77 +754,107 @@ class _BookingPageState extends State<BookingPage> {
         final index = indices[i];
         final komputer = komputerList[index];
         final isSelected = selectedKomputer == index;
+        final isBooked = _bookedComputers.contains(komputer['id']);
         final tierColor = _tierColor(komputer['tier'] as String);
 
+        final Color nameColor = isBooked
+            ? CustomColors.mabarTextTertiary
+            : isSelected
+                ? CustomColors.mabarBorderFocus
+                : CustomColors.mabarTextPrimary;
+
         return GestureDetector(
-          onTap: () => setState(() => selectedKomputer = index),
+          onTap: isBooked
+              ? () => _showError(
+                  '${komputer['name']} sudah dibooking di jam itu. Pilih jam lain atau unit lain.')
+              : () => setState(() => selectedKomputer = index),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              color: isSelected
-                  ? CustomColors.mabarBorderFocus
-                      .withValues(alpha: 0.12)
-                  : CustomColors.mabarSurfaceCard,
+              color: isBooked
+                  ? CustomColors.mabarBgDark
+                  : isSelected
+                      ? CustomColors.mabarBorderFocus.withValues(alpha: 0.12)
+                      : CustomColors.mabarSurfaceCard,
               border: Border.all(
-                color: isSelected
+                color: isSelected && !isBooked
                     ? CustomColors.mabarBorderFocus
                     : CustomColors.mabarBorderSubtle,
-                width: isSelected ? 1.5 : 1,
+                width: isSelected && !isBooked ? 1.5 : 1,
               ),
             ),
             child: Stack(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          komputer['icon'] as String,
-                          width: 22,
-                          color: isSelected
-                              ? CustomColors.mabarBorderFocus
-                              : CustomColors.mabarTextPrimary,
-                        ),
-                        const SizedBox(width: 7),
-                        Expanded(
-                          child: Text(
-                            komputer['name'] as String,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? CustomColors.mabarBorderFocus
-                                  : CustomColors.mabarTextPrimary,
+                Opacity(
+                  opacity: isBooked ? 0.45 : 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            komputer['icon'] as String,
+                            width: 22,
+                            color: nameColor,
+                          ),
+                          const SizedBox(width: 7),
+                          Expanded(
+                            child: Text(
+                              komputer['name'] as String,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: nameColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _tierBadge(komputer['tier'] as String, tierColor),
+                          const SizedBox(height: 3),
+                          Text(
+                            komputer['spec'] as String,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: CustomColors.mabarTextSecondary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _tierBadge(
-                            komputer['tier'] as String, tierColor),
-                        const SizedBox(height: 3),
-                        Text(
-                          komputer['spec'] as String,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: CustomColors.mabarTextSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                if (isSelected)
+                if (isBooked)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade900.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Dibooking',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                else if (isSelected)
                   Positioned(
                     top: 0,
                     right: 0,
