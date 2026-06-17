@@ -144,6 +144,42 @@ class FirestoreService {
         });
   }
 
+  /// Semua booking pada sebuah venue (untuk dashboard admin),
+  /// diurutkan terbaru dulu di sisi klien.
+  static Stream<List<Map<String, dynamic>>> getVenueBookings(String venueId) {
+    return _db
+        .collection('bookings')
+        .where('venue_id', isEqualTo: venueId)
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList();
+          list.sort((a, b) {
+            final aTime = (a['start_time'] as Timestamp?)?.toDate();
+            final bTime = (b['start_time'] as Timestamp?)?.toDate();
+            if (aTime == null && bTime == null) return 0;
+            if (aTime == null) return 1;
+            if (bTime == null) return -1;
+            return bTime.compareTo(aTime);
+          });
+          return list;
+        });
+  }
+
+  /// Tandai booking sebagai selesai (dipakai admin venue).
+  static Future<bool> markBookingDone(String bookingId) async {
+    try {
+      await _db
+          .collection('bookings')
+          .doc(bookingId)
+          .update({'status': 'done'});
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Batalkan booking: ubah status menjadi 'cancelled'.
   /// Hanya boleh untuk booking milik user yang sedang login.
   static Future<bool> cancelBooking(String bookingId) async {
@@ -173,6 +209,40 @@ class FirestoreService {
     } catch (_) {
       return {};
     }
+  }
+
+  /// Ambil role user yang sedang login: 'admin' atau 'user'.
+  /// Default 'user' bila dokumen/role belum ada.
+  static Future<String> getCurrentUserRole() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return 'user';
+    try {
+      final snapshot = await _db.collection('users').doc(userId).get();
+      final role = snapshot.data()?['role'] as String?;
+      return role == 'admin' ? 'admin' : 'user';
+    } catch (_) {
+      return 'user';
+    }
+  }
+
+  /// Catat role user di Firestore (dipakai saat registrasi).
+  static Future<void> setUserRole(String uid, String role) async {
+    await _db.collection('users').doc(uid).set({
+      'role': role,
+      'created_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Daftar venue milik admin yang sedang login (owner_uid == uid).
+  static Stream<List<Map<String, dynamic>>> getMyVenues() {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return const Stream.empty();
+    return _db
+        .collection('venues')
+        .where('owner_uid', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
   }
 
   /// Simpan profil user: displayName ke FirebaseAuth, nomor telepon ke Firestore.

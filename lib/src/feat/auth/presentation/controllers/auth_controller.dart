@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart'; // Sesuaikan rute ke Shell Utama
+import 'package:mabar_slurd/src/feat/admin/presentation/views/admin_shell.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
 
 class AuthController extends GetxController {
@@ -14,7 +16,8 @@ class AuthController extends GetxController {
   // ==========================================
   // LOGIKA REGISTRASI PENGGUNA BARU
   // ==========================================
-  Future<void> registerUser(String email, String password, {String username = ''}) async {
+  Future<void> registerUser(String email, String password,
+      {String username = '', bool isAdmin = false}) async {
     if (email.trim().isEmpty || password.trim().isEmpty) {
       _showSnackbar('Peringatan', 'Email dan password tidak boleh kosong, Slurd!', Colors.orange);
       return;
@@ -32,8 +35,20 @@ class AuthController extends GetxController {
         await credential.user?.updateDisplayName(username.trim());
       }
 
-      _showSnackbar('Sukses', 'Akun berhasil dibuat! Silakan masuk.', Colors.green);
-      
+      // Simpan role akun ke Firestore.
+      final uid = credential.user?.uid;
+      if (uid != null) {
+        await FirestoreService.setUserRole(uid, isAdmin ? 'admin' : 'user');
+      }
+
+      _showSnackbar(
+        'Sukses',
+        isAdmin
+            ? 'Akun admin berhasil dibuat! Silakan masuk.'
+            : 'Akun berhasil dibuat! Silakan masuk.',
+        Colors.green,
+      );
+
       // Mengarahkan pengguna langsung ke halaman Login
       Get.offAll(() => const LoginScreen());
     } on FirebaseAuthException catch (e) {
@@ -82,8 +97,8 @@ class AuthController extends GetxController {
 
       _showSnackbar('Berhasil', 'Selamat datang kembali di Mabar Slurd!', Colors.green);
 
-      // Pindah ke MainShell dan hapus history stack
-      Get.offAll(() => const MainShell());
+      // Routing sesuai role: admin → AdminShell, user → MainShell.
+      await routeByRole();
     } on FirebaseAuthException catch (e) {
       // Penanganan error login yang spesifik agar tidak memicu crash
       String errorMessage = 'Email atau kata sandi salah, Slurd!';
@@ -145,6 +160,18 @@ class AuthController extends GetxController {
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // ==========================================
+  // ROUTING SESUAI ROLE (admin / user)
+  // ==========================================
+  Future<void> routeByRole() async {
+    final role = await FirestoreService.getCurrentUserRole();
+    if (role == 'admin') {
+      Get.offAll(() => const AdminShell());
+    } else {
+      Get.offAll(() => const MainShell());
     }
   }
 

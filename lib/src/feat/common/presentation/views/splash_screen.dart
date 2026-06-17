@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/feat/admin/presentation/views/admin_shell.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
 
@@ -15,17 +17,28 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Menunggu 3 detik lalu berpindah ke HomeScreen
-    Timer(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      final user = FirebaseAuth.instance.currentUser;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) =>
-              user != null ? const MainShell() : const LoginScreen(),
-        ),
-      );
-    });
+    // Menunggu 3 detik lalu berpindah sesuai status login & role.
+    Timer(const Duration(seconds: 3), _goNext);
+  }
+
+  Future<void> _goNext() async {
+    if (!mounted) return;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      _replaceWith(const LoginScreen());
+      return;
+    }
+
+    final role = await FirestoreService.getCurrentUserRole();
+    if (!mounted) return;
+    _replaceWith(role == 'admin' ? const AdminShell() : const MainShell());
+  }
+
+  void _replaceWith(Widget page) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => page),
+    );
   }
 
   @override
