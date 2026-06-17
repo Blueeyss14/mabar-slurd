@@ -27,17 +27,8 @@ class _BookingPageState extends State<BookingPage> {
   int _durasiJam = 1;
   int? selectedKomputer;
   bool _isLoading = false;
-  String _tierFilter = 'Semua';
 
-  static const List<String> _tierOptions = [
-    'Semua',
-    'Reguler',
-    'Gaming',
-    'VIP',
-    'Console',
-  ];
-
-  // ─── computed state ────────────────────────────────────────────────────────
+  // ─── computed ──────────────────────────────────────────────────────────────
 
   DateTime? get _startTime {
     if (selectedDate == null || selectedJam == null) return null;
@@ -58,39 +49,27 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   String get _timeRangeText {
-    if (_startTime == null) return '-';
+    if (_startTime == null) return '–';
     String fmt(DateTime dt) =>
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     return '${fmt(_startTime!)} – ${fmt(_endTime!)}';
   }
 
-  int get _totalPrice {
-    final pricePerHour =
-        (widget.venue['price_per_hour'] as num?)?.toInt() ?? 0;
-    return pricePerHour * _durasiJam;
-  }
+  int get _pricePerHour =>
+      (widget.venue['price_per_hour'] as num?)?.toInt() ?? 0;
 
-  List<int> get _filteredIndices {
-    if (_tierFilter == 'Semua') {
-      return List.generate(komputerList.length, (i) => i);
-    }
-    return komputerList
-        .asMap()
-        .entries
-        .where((e) => e.value['tier'] == _tierFilter)
-        .map((e) => e.key)
-        .toList();
+  int get _totalPrice => _pricePerHour * _durasiJam;
+
+  bool _isSlotPast(int hour) {
+    if (selectedDate == null) return false;
+    final now = DateTime.now();
+    final isToday = selectedDate!.year == now.year &&
+        selectedDate!.month == now.month &&
+        selectedDate!.day == now.day;
+    return isToday && hour <= now.hour;
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────────
-
-  String _periodLabel(int hour) {
-    if (hour < 5) return 'Dini Hari';
-    if (hour < 11) return 'Pagi';
-    if (hour < 15) return 'Siang';
-    if (hour < 19) return 'Sore';
-    return 'Malam';
-  }
 
   Color _tierColor(String tier) {
     switch (tier) {
@@ -119,7 +98,7 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
-  // ─── booking logic ─────────────────────────────────────────────────────────
+  // ─── booking ───────────────────────────────────────────────────────────────
 
   Future<void> _handleBookingConfirmed() async {
     if (selectedDate == null) {
@@ -206,107 +185,94 @@ class _BookingPageState extends State<BookingPage> {
 
     showDialog(
       context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1E1E2A),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text(
-            'Konfirmasi Booking',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Konfirmasi Booking',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.venue['name'] as String? ?? '-',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
             ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.venue['name'] as String? ?? '-',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${Formatters.tanggal(selectedDate!)}  ·  $_timeRangeText',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${komputer['name']} · ${komputer['spec']}',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Total',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    'Rp ${Formatters.rupiah(_totalPrice * 1000)}',
-                    style: const TextStyle(
-                      color: CustomColors.mabarCyan,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-          actions: [
+            const SizedBox(height: 4),
+            Text(
+              '${Formatters.tanggal(selectedDate!)}  ·  $_timeRangeText',
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${komputer['name']} · ${komputer['spec']}',
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: const BorderSide(
-                          color: CustomColors.mabarBorderSubtle,
-                        ),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text(
-                      'Batalkan',
-                      style: TextStyle(color: Colors.grey, fontSize: 15),
-                    ),
-                  ),
+                const Text(
+                  'Total',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: MabarButton(
-                    text: 'Pesan Sekarang',
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _handleBookingConfirmed();
-                    },
+                Text(
+                  'Rp ${Formatters.rupiah(_totalPrice * 1000)}',
+                  style: const TextStyle(
+                    color: CustomColors.mabarCyan,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ],
             ),
           ],
-        );
-      },
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(
+                          color: CustomColors.mabarBorderSubtle),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    'Batalkan',
+                    style: TextStyle(color: Colors.grey, fontSize: 15),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: MabarButton(
+                  text: 'Pesan Sekarang',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _handleBookingConfirmed();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -330,71 +296,52 @@ class _BookingPageState extends State<BookingPage> {
                   _buildHeader(venueName),
                   const SizedBox(height: 28),
 
-                  // ── Pilih Tanggal
-                  _buildSectionLabel(
-                    'Pilih Tanggal',
-                    icon: Icons.calendar_today_outlined,
-                    chip: selectedDate != null
-                        ? Formatters.tanggal(selectedDate!)
-                        : null,
-                  ),
+                  _buildSectionLabel('Pilih Tanggal',
+                      icon: Icons.calendar_today_outlined,
+                      chip: selectedDate != null
+                          ? Formatters.tanggal(selectedDate!)
+                          : null),
                   const SizedBox(height: 10),
                   _buildTanggalPicker(),
                   const SizedBox(height: 28),
 
-                  // ── Pilih Jam
-                  _buildSectionLabel(
-                    'Jam Mulai',
-                    icon: Icons.schedule_outlined,
-                    chip: selectedJam != null
-                        ? pilihJam[selectedJam!]['jam']
-                        : null,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildJamPicker(),
+                  _buildSectionLabel('Jam Mulai',
+                      icon: Icons.schedule_outlined,
+                      chip: selectedJam != null
+                          ? pilihJam[selectedJam!]['jam']
+                          : null),
+                  const SizedBox(height: 12),
+                  _buildJamGrid(),
                   const SizedBox(height: 28),
 
-                  // ── Durasi
-                  _buildSectionLabel(
-                    'Durasi',
-                    icon: Icons.timelapse_outlined,
-                    chip: '$_durasiJam Jam',
-                  ),
+                  _buildSectionLabel('Durasi',
+                      icon: Icons.timelapse_outlined,
+                      chip: '$_durasiJam Jam'),
                   const SizedBox(height: 10),
                   _buildDurasiPicker(),
                   const SizedBox(height: 28),
 
-                  // ── Pilih Perangkat
-                  _buildSectionLabel(
-                    'Pilih Perangkat',
-                    icon: Icons.computer_outlined,
-                    chip: selectedKomputer != null
-                        ? komputerList[selectedKomputer!]['name']
-                        : null,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildTierFilterRow(),
-                  const SizedBox(height: 10),
-                  _buildKomputerGrid(),
+                  _buildSectionLabel('Pilih Perangkat',
+                      icon: Icons.devices_outlined,
+                      chip: selectedKomputer != null
+                          ? komputerList[selectedKomputer!]['name']
+                          : null),
+                  const SizedBox(height: 12),
+                  _buildKomputerSection(),
                   const SizedBox(height: 28),
 
-                  // ── Ringkasan
-                  _buildSectionLabel(
-                    'Ringkasan',
-                    icon: Icons.receipt_long_outlined,
-                  ),
+                  _buildSectionLabel('Ringkasan',
+                      icon: Icons.receipt_long_outlined),
                   const SizedBox(height: 10),
                   _buildSummaryCard(venueName),
                   const SizedBox(height: 24),
 
-                  // ── CTA
                   _isLoading
                       ? const Center(
                           child: Padding(
                             padding: EdgeInsets.symmetric(vertical: 12),
                             child: CircularProgressIndicator(
-                              color: CustomColors.mabarBorderFocus,
-                            ),
+                                color: CustomColors.mabarBorderFocus),
                           ),
                         )
                       : MabarButton(
@@ -437,11 +384,8 @@ class _BookingPageState extends State<BookingPage> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: CustomColors.mabarBorderSubtle),
             ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              color: CustomColors.mabarTextPrimary,
-              size: 17,
-            ),
+            child: const Icon(Icons.arrow_back_ios_new,
+                color: CustomColors.mabarTextPrimary, size: 17),
           ),
         ),
         const SizedBox(width: 14),
@@ -449,23 +393,17 @@ class _BookingPageState extends State<BookingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Booking',
-                style: TextStyle(
-                  color: CustomColors.mabarTextSecondary,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Text(
-                venueName,
-                style: const TextStyle(
-                  color: CustomColors.mabarTextPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+              const Text('Booking',
+                  style: TextStyle(
+                      color: CustomColors.mabarTextSecondary,
+                      fontSize: 11,
+                      letterSpacing: 0.5)),
+              Text(venueName,
+                  style: const TextStyle(
+                      color: CustomColors.mabarTextPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
+                  overflow: TextOverflow.ellipsis),
             ],
           ),
         ),
@@ -473,39 +411,31 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
-  Widget _buildSectionLabel(
-    String title, {
-    required IconData icon,
-    String? chip,
-  }) {
+  Widget _buildSectionLabel(String title,
+      {required IconData icon, String? chip}) {
     return Row(
       children: [
         Icon(icon, size: 17, color: CustomColors.mabarBorderFocus),
         const SizedBox(width: 7),
-        Text(
-          title,
-          style: const TextStyle(
-            color: CustomColors.mabarTextPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
+        Text(title,
+            style: const TextStyle(
+                color: CustomColors.mabarTextPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16)),
         if (chip != null) ...[
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
             decoration: BoxDecoration(
-              color: CustomColors.mabarBorderFocus.withValues(alpha: 0.18),
+              color:
+                  CustomColors.mabarBorderFocus.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              chip,
-              style: const TextStyle(
-                color: CustomColors.mabarBorderFocus,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
+            child: Text(chip,
+                style: const TextStyle(
+                    color: CustomColors.mabarBorderFocus,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
           ),
         ],
       ],
@@ -516,7 +446,8 @@ class _BookingPageState extends State<BookingPage> {
     return GestureDetector(
       onTap: () => setState(() => isCalendarPoping = true),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: CustomColors.mabarSurfaceCard,
@@ -531,14 +462,12 @@ class _BookingPageState extends State<BookingPage> {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: CustomColors.mabarBorderFocus.withValues(alpha: 0.15),
+                color: CustomColors.mabarBorderFocus
+                    .withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.calendar_month,
-                color: CustomColors.mabarBorderFocus,
-                size: 18,
-              ),
+              child: const Icon(Icons.calendar_month,
+                  color: CustomColors.mabarBorderFocus, size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -555,36 +484,180 @@ class _BookingPageState extends State<BookingPage> {
                 ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: CustomColors.mabarTextSecondary,
-              size: 20,
-            ),
+            const Icon(Icons.chevron_right,
+                color: CustomColors.mabarTextSecondary, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildJamPicker() {
+  // ── Pilih Jam: Cinema XXI style grid ──────────────────────────────────────
+
+  Widget _buildJamGrid() {
+    // Period groups: label + list of hours
+    const groups = [
+      _JamGroup('Dini Hari', [0, 1, 2, 3, 4]),
+      _JamGroup('Pagi', [5, 6, 7, 8, 9, 10]),
+      _JamGroup('Siang', [11, 12, 13, 14]),
+      _JamGroup('Sore', [15, 16, 17, 18]),
+      _JamGroup('Malam', [19, 20, 21, 22, 23]),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Legend
+        Row(
+          children: [
+            _legendDot(CustomColors.mabarBorderFocus, 'Dipilih'),
+            const SizedBox(width: 16),
+            _legendDot(CustomColors.mabarSurfaceCard, 'Tersedia',
+                border: true),
+            const SizedBox(width: 16),
+            _legendDot(const Color(0xFF1A1A20), 'Sudah Lewat'),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Groups
+        ...groups.map((group) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  group.label.toUpperCase(),
+                  style: const TextStyle(
+                    color: CustomColors.mabarTextTertiary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: group.hours.map((hour) {
+                  final index = hour; // pilihJam index == hour
+                  final jamStr =
+                      '${hour.toString().padLeft(2, '0')}:00';
+                  final isSelected = selectedJam == index;
+                  final isPast = _isSlotPast(hour);
+
+                  return GestureDetector(
+                    onTap: isPast
+                        ? null
+                        : () => setState(() => selectedJam = index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 60,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: isPast
+                            ? const Color(0xFF181820)
+                            : isSelected
+                                ? CustomColors.mabarBorderFocus
+                                : CustomColors.mabarSurfaceCard,
+                        border: Border.all(
+                          color: isPast
+                              ? const Color(0xFF252530)
+                              : isSelected
+                                  ? CustomColors.mabarBorderFocus
+                                  : CustomColors.mabarBorderSubtle,
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            jamStr,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isPast
+                                  ? const Color(0xFF3A3A4A)
+                                  : CustomColors.mabarTextPrimary,
+                            ),
+                          ),
+                          if (isSelected) ...[
+                            const SizedBox(height: 3),
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _legendDot(Color color, String label, {bool border = false}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+            border: border
+                ? Border.all(color: CustomColors.mabarBorderSubtle)
+                : null,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            color: CustomColors.mabarTextSecondary,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Durasi: vertical cards dengan harga per pilihan ───────────────────────
+
+  Widget _buildDurasiPicker() {
     return SizedBox(
-      height: 72,
+      height: 80,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: pilihJam.length,
+        itemCount: 12,
         itemBuilder: (context, index) {
-          final jamStr = pilihJam[index]['jam'] as String;
-          final hour = int.parse(jamStr.split(':')[0]);
-          final isSelected = selectedJam == index;
+          final jam = index + 1;
+          final isSelected = _durasiJam == jam;
+          final harga = _pricePerHour * jam;
 
           return GestureDetector(
-            onTap: () => setState(() => selectedJam = index),
+            onTap: () => setState(() => _durasiJam = jam),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 8),
-              width: 62,
+              duration: const Duration(milliseconds: 180),
+              margin: const EdgeInsets.only(right: 10),
+              width: 78,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 color: isSelected
                     ? CustomColors.mabarBorderFocus
                     : CustomColors.mabarSurfaceCard,
@@ -599,21 +672,23 @@ class _BookingPageState extends State<BookingPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    jamStr,
+                    '$jam Jam',
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: CustomColors.mabarTextPrimary,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
-                    _periodLabel(hour),
+                    harga > 0
+                        ? 'Rp ${Formatters.rupiah(harga * 1000)}'
+                        : '– –',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 10,
                       color: isSelected
                           ? CustomColors.mabarTextPrimary
-                              .withValues(alpha: 0.8)
+                              .withValues(alpha: 0.85)
                           : CustomColors.mabarTextSecondary,
                     ),
                   ),
@@ -626,100 +701,73 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
-  Widget _buildDurasiPicker() {
-    return SizedBox(
-      height: 42,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 12,
-        itemBuilder: (context, index) {
-          final jam = index + 1;
-          final isSelected = _durasiJam == jam;
+  // ── Pilih Perangkat: dua section (PC + Console) ───────────────────────────
 
-          return GestureDetector(
-            onTap: () => setState(() => _durasiJam = jam),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              margin: const EdgeInsets.only(right: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                color: isSelected
-                    ? CustomColors.mabarBorderFocus
-                    : CustomColors.mabarSurfaceCard,
-                border: Border.all(
-                  color: isSelected
-                      ? CustomColors.mabarBorderFocus
-                      : CustomColors.mabarBorderSubtle,
-                ),
-              ),
-              child: Text(
-                '$jam Jam',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: CustomColors.mabarTextPrimary,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+  Widget _buildKomputerSection() {
+    final pcIndices = komputerList
+        .asMap()
+        .entries
+        .where((e) => (e.value['tier'] as String) != 'Console')
+        .map((e) => e.key)
+        .toList();
+
+    final consoleIndices = komputerList
+        .asMap()
+        .entries
+        .where((e) => (e.value['tier'] as String) == 'Console')
+        .map((e) => e.key)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _deviceSectionHeader(Icons.computer_outlined, 'PC', pcIndices.length),
+        const SizedBox(height: 8),
+        _buildKomputerGrid(pcIndices),
+        const SizedBox(height: 20),
+        _deviceSectionHeader(
+            Icons.gamepad_outlined, 'Console', consoleIndices.length),
+        const SizedBox(height: 8),
+        _buildKomputerGrid(consoleIndices),
+      ],
     );
   }
 
-  Widget _buildTierFilterRow() {
-    return SizedBox(
-      height: 34,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _tierOptions.length,
-        itemBuilder: (context, index) {
-          final tier = _tierOptions[index];
-          final isActive = _tierFilter == tier;
-
-          return GestureDetector(
-            onTap: () => setState(() {
-              _tierFilter = tier;
-            }),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              margin: const EdgeInsets.only(right: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: isActive
-                    ? CustomColors.mabarBorderFocus
-                    : CustomColors.mabarSurfaceCard,
-                border: Border.all(
-                  color: isActive
-                      ? CustomColors.mabarBorderFocus
-                      : CustomColors.mabarBorderSubtle,
-                ),
-              ),
-              child: Text(
-                tier,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                  color: isActive
-                      ? CustomColors.mabarTextPrimary
-                      : CustomColors.mabarTextSecondary,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+  Widget _deviceSectionHeader(
+      IconData icon, String label, int count) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: CustomColors.mabarTextSecondary),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: CustomColors.mabarTextSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$count unit',
+          style: const TextStyle(
+            color: CustomColors.mabarTextTertiary,
+            fontSize: 12,
+          ),
+        ),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(left: 10),
+            height: 1,
+            color: CustomColors.mabarBorderSubtle,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildKomputerGrid() {
-    final indices = _filteredIndices;
-
+  Widget _buildKomputerGrid(List<int> indices) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -744,7 +792,8 @@ class _BookingPageState extends State<BookingPage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               color: isSelected
-                  ? CustomColors.mabarBorderFocus.withValues(alpha: 0.12)
+                  ? CustomColors.mabarBorderFocus
+                      .withValues(alpha: 0.12)
                   : CustomColors.mabarSurfaceCard,
               border: Border.all(
                 color: isSelected
@@ -788,9 +837,7 @@ class _BookingPageState extends State<BookingPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _tierBadge(
-                          komputer['tier'] as String,
-                          tierColor,
-                        ),
+                            komputer['tier'] as String, tierColor),
                         const SizedBox(height: 3),
                         Text(
                           komputer['spec'] as String,
@@ -816,11 +863,8 @@ class _BookingPageState extends State<BookingPage> {
                         color: CustomColors.mabarBorderFocus,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 12,
-                      ),
+                      child: const Icon(Icons.check,
+                          color: Colors.white, size: 12),
                     ),
                   ),
               ],
@@ -831,10 +875,9 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
-  Widget _buildSummaryCard(String venueName) {
-    final pricePerHour =
-        (widget.venue['price_per_hour'] as num?)?.toInt() ?? 0;
+  // ── Ringkasan ──────────────────────────────────────────────────────────────
 
+  Widget _buildSummaryCard(String venueName) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -850,14 +893,12 @@ class _BookingPageState extends State<BookingPage> {
           _summaryRow(
             Icons.calendar_today_outlined,
             'Tanggal',
-            selectedDate != null ? Formatters.tanggal(selectedDate!) : '–',
+            selectedDate != null
+                ? Formatters.tanggal(selectedDate!)
+                : '–',
           ),
           _summaryDivider(),
-          _summaryRow(
-            Icons.access_time_outlined,
-            'Waktu',
-            _timeRangeText,
-          ),
+          _summaryRow(Icons.access_time_outlined, 'Waktu', _timeRangeText),
           _summaryDivider(),
           _summaryRow(
             Icons.computer_outlined,
@@ -868,20 +909,17 @@ class _BookingPageState extends State<BookingPage> {
           ),
           _summaryDivider(),
           _summaryRow(
-            Icons.timelapse_outlined,
-            'Durasi',
-            '$_durasiJam Jam',
-          ),
+              Icons.timelapse_outlined, 'Durasi', '$_durasiJam Jam'),
           _summaryDivider(),
           _summaryRow(
             Icons.payments_outlined,
             'Harga / Jam',
-            'Rp ${Formatters.rupiah(pricePerHour * 1000)}',
+            'Rp ${Formatters.rupiah(_pricePerHour * 1000)}',
           ),
           const SizedBox(height: 14),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: CustomColors.mabarBgDark,
@@ -923,13 +961,9 @@ class _BookingPageState extends State<BookingPage> {
       children: [
         Icon(icon, size: 15, color: CustomColors.mabarTextSecondary),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: CustomColors.mabarTextSecondary,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 13, color: CustomColors.mabarTextSecondary)),
         const Spacer(),
         Flexible(
           child: Text(
@@ -952,16 +986,23 @@ class _BookingPageState extends State<BookingPage> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.5), width: 0.8),
+        border:
+            Border.all(color: color.withValues(alpha: 0.5), width: 0.8),
       ),
       child: Text(
         tier,
         style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
+            fontSize: 9, fontWeight: FontWeight.bold, color: color),
       ),
     );
   }
+}
+
+// ─── data class ───────────────────────────────────────────────────────────────
+
+@immutable
+class _JamGroup {
+  final String label;
+  final List<int> hours;
+  const _JamGroup(this.label, this.hours);
 }
