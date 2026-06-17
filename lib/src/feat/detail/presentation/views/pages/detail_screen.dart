@@ -1,5 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
@@ -138,7 +139,7 @@ class DetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "${pricePerHour}k/jam",
+                    "Rp ${Formatters.rupiah(pricePerHour * 1000)}/jam",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
@@ -211,7 +212,7 @@ class DetailScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          "${pricePerHour}k",
+                          "Rp ${Formatters.rupiah(pricePerHour * 1000)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,

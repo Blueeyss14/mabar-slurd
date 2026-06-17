@@ -41,6 +41,36 @@ class FirestoreService {
     }
   }
 
+  /// Kembalikan daftar id komputer yang sudah dibooking (status active) dan
+  /// waktunya overlap dengan rentang [startTime]–[endTime] di sebuah venue.
+  static Future<Set<String>> getBookedComputers(
+    String venueId,
+    DateTime startTime,
+    DateTime endTime,
+  ) async {
+    try {
+      final snapshot = await _db
+          .collection('bookings')
+          .where('venue_id', isEqualTo: venueId)
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      return snapshot.docs
+          .where((doc) {
+            final data = doc.data();
+            if (data['computer_id'] == null) return false;
+            final existingStart = (data['start_time'] as Timestamp).toDate();
+            final existingEnd = (data['end_time'] as Timestamp).toDate();
+            return existingStart.isBefore(endTime) &&
+                existingEnd.isAfter(startTime);
+          })
+          .map((doc) => doc.data()['computer_id'] as String)
+          .toSet();
+    } catch (_) {
+      return <String>{};
+    }
+  }
+
   /// Buat booking baru. Ketersediaan slot dicek tepat sebelum menulis.
   ///
   /// Catatan: pengecekan ini memakai query koleksi (lihat [getAvailableSlots]),
@@ -58,15 +88,11 @@ class FirestoreService {
     required int durationHours,
     required String deviceType,
     required int totalPrice,
-    required int totalSlots,
+    required String computerId,
   }) async {
-    final available = await getAvailableSlots(
-      venueId,
-      startTime,
-      endTime,
-      totalSlots,
-    );
-    if (available <= 0) return false;
+    // Pastikan komputer yang dipilih belum dibooking di rentang waktu ini.
+    final booked = await getBookedComputers(venueId, startTime, endTime);
+    if (booked.contains(computerId)) return false;
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
 
@@ -78,6 +104,7 @@ class FirestoreService {
       'end_time': Timestamp.fromDate(endTime),
       'duration_hours': durationHours,
       'device_type': deviceType,
+      'computer_id': computerId,
       'total_price': totalPrice,
       'status': 'active',
       'created_at': FieldValue.serverTimestamp(),
@@ -88,6 +115,11 @@ class FirestoreService {
 
   /// Ambil riwayat booking milik user yang sedang login,
   /// diurutkan dari yang terbaru.
+  ///
+  /// Catatan: sengaja TIDAK memakai orderBy('created_at') di server agar tidak
+  /// membutuhkan composite index Firestore, dan agar booking yang baru dibuat
+  /// (created_at serverTimestamp sempat null sesaat) tetap langsung muncul.
+  /// Pengurutan dilakukan di sisi klien.
   static Stream<List<Map<String, dynamic>>> getBookingHistory() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return const Stream.empty();
@@ -95,14 +127,21 @@ class FirestoreService {
     return _db
         .collection('bookings')
         .where('user_id', isEqualTo: userId)
-        .orderBy('created_at', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs.map((doc) {
-            final data = doc.data();
-            return {'id': doc.id, ...data};
-          }).toList(),
-        );
+        .map((snapshot) {
+          final list = snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList();
+          list.sort((a, b) {
+            final aTime = (a['created_at'] as Timestamp?)?.toDate();
+            final bTime = (b['created_at'] as Timestamp?)?.toDate();
+            if (aTime == null && bTime == null) return 0;
+            if (aTime == null) return -1; // baru dibuat → paling atas
+            if (bTime == null) return 1;
+            return bTime.compareTo(aTime); // terbaru dulu
+          });
+          return list;
+        });
   }
 
   /// Batalkan booking: ubah status menjadi 'cancelled'.
@@ -118,6 +157,38 @@ class FirestoreService {
       if (snapshot.data()?['user_id'] != userId) return false;
 
       await doc.update({'status': 'cancelled'});
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ambil data profil tambahan user (mis. nomor telepon) dari Firestore.
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return {};
+    try {
+      final snapshot = await _db.collection('users').doc(userId).get();
+      return snapshot.data() ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Simpan profil user: displayName ke FirebaseAuth, nomor telepon ke Firestore.
+  static Future<bool> updateUserProfile({
+    required String displayName,
+    required String phone,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    try {
+      await user.updateDisplayName(displayName.trim());
+      await _db.collection('users').doc(user.uid).set({
+        'display_name': displayName.trim(),
+        'phone': phone.trim(),
+        'updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
       return true;
     } catch (_) {
       return false;

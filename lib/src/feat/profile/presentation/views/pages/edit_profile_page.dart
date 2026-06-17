@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
@@ -10,12 +12,26 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController _usernameController =
-      TextEditingController(text: "pro_gamer_99");
-  final TextEditingController _emailController =
-      TextEditingController(text: "gaming@example.com");
-  final TextEditingController _phoneController =
-      TextEditingController(text: "0812-3456-7890");
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    _usernameController.text = user?.displayName ?? '';
+    _emailController.text = user?.email ?? '';
+    final profile = await FirestoreService.getUserProfile();
+    if (mounted) {
+      setState(() => _phoneController.text = profile['phone'] as String? ?? '');
+    }
+  }
 
   @override
   void dispose() {
@@ -25,21 +41,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  void _simpan() {
+  Future<void> _simpan() async {
     FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
+    final ok = await FirestoreService.updateUserProfile(
+      displayName: _usernameController.text,
+      phone: _phoneController.text,
+    );
+    if (!mounted) return;
+    setState(() => _isLoading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Profil berhasil diperbarui',
-          style: TextStyle(
+          ok ? 'Profil berhasil diperbarui' : 'Gagal memperbarui profil',
+          style: const TextStyle(
             color: CustomColors.mabarTextPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: CustomColors.mabarPurpleBg,
+        backgroundColor:
+            ok ? CustomColors.mabarPurpleBg : Colors.red.shade800,
       ),
     );
-    Navigator.pop(context);
+    if (ok) Navigator.pop(context);
   }
 
   @override
@@ -141,15 +165,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: _simpan,
-                child: const Text(
-                  "SIMPAN PERUBAHAN",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                onPressed: _isLoading ? null : _simpan,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Text(
+                        "SIMPAN PERUBAHAN",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 30),
