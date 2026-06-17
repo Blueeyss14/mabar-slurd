@@ -60,15 +60,6 @@ class _BookingPageState extends State<BookingPage> {
 
   int get _totalPrice => _pricePerHour * _durasiJam;
 
-  bool _isSlotPast(int hour) {
-    if (selectedDate == null) return false;
-    final now = DateTime.now();
-    final isToday = selectedDate!.year == now.year &&
-        selectedDate!.month == now.month &&
-        selectedDate!.day == now.day;
-    return isToday && hour <= now.hour;
-  }
-
   // ─── helpers ───────────────────────────────────────────────────────────────
 
   Color _tierColor(String tier) {
@@ -238,35 +229,60 @@ class _BookingPageState extends State<BookingPage> {
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         actions: [
           Row(
             children: [
               Expanded(
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
                       side: const BorderSide(
                           color: CustomColors.mabarBorderSubtle),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text(
-                    'Batalkan',
-                    style: TextStyle(color: Colors.grey, fontSize: 15),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text(
+                      'Batal',
+                      style: TextStyle(
+                        color: CustomColors.mabarTextSecondary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: MabarButton(
-                  text: 'Pesan Sekarang',
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _handleBookingConfirmed();
-                  },
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      backgroundColor: CustomColors.mabarBorderFocus,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _handleBookingConfirmed();
+                    },
+                    child: const Text(
+                      'Pesan',
+                      style: TextStyle(
+                        color: CustomColors.mabarTextPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -492,212 +508,91 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
-  // ── Pilih Jam: Cinema XXI style grid ──────────────────────────────────────
+  // ── Pilih Jam: grid sederhana 4 kolom ─────────────────────────────────────
 
   Widget _buildJamGrid() {
-    // Period groups: label + list of hours
-    const groups = [
-      _JamGroup('Dini Hari', [0, 1, 2, 3, 4]),
-      _JamGroup('Pagi', [5, 6, 7, 8, 9, 10]),
-      _JamGroup('Siang', [11, 12, 13, 14]),
-      _JamGroup('Sore', [15, 16, 17, 18]),
-      _JamGroup('Malam', [19, 20, 21, 22, 23]),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Legend
-        Row(
-          children: [
-            _legendDot(CustomColors.mabarBorderFocus, 'Dipilih'),
-            const SizedBox(width: 16),
-            _legendDot(CustomColors.mabarSurfaceCard, 'Tersedia',
-                border: true),
-            const SizedBox(width: 16),
-            _legendDot(const Color(0xFF1A1A20), 'Sudah Lewat'),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Groups
-        ...groups.map((group) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  group.label.toUpperCase(),
-                  style: const TextStyle(
-                    color: CustomColors.mabarTextTertiary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: group.hours.map((hour) {
-                  final index = hour; // pilihJam index == hour
-                  final jamStr =
-                      '${hour.toString().padLeft(2, '0')}:00';
-                  final isSelected = selectedJam == index;
-                  final isPast = _isSlotPast(hour);
-
-                  return GestureDetector(
-                    onTap: isPast
-                        ? null
-                        : () => setState(() => selectedJam = index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 60,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: isPast
-                            ? const Color(0xFF181820)
-                            : isSelected
-                                ? CustomColors.mabarBorderFocus
-                                : CustomColors.mabarSurfaceCard,
-                        border: Border.all(
-                          color: isPast
-                              ? const Color(0xFF252530)
-                              : isSelected
-                                  ? CustomColors.mabarBorderFocus
-                                  : CustomColors.mabarBorderSubtle,
-                          width: isSelected ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            jamStr,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isPast
-                                  ? const Color(0xFF3A3A4A)
-                                  : CustomColors.mabarTextPrimary,
-                            ),
-                          ),
-                          if (isSelected) ...[
-                            const SizedBox(height: 3),
-                            Container(
-                              width: 5,
-                              height: 5,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 14),
-            ],
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _legendDot(Color color, String label, {bool border = false}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-            border: border
-                ? Border.all(color: CustomColors.mabarBorderSubtle)
-                : null,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            color: CustomColors.mabarTextSecondary,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Durasi: vertical cards dengan harga per pilihan ───────────────────────
-
-  Widget _buildDurasiPicker() {
-    return SizedBox(
-      height: 80,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 12,
-        itemBuilder: (context, index) {
-          final jam = index + 1;
-          final isSelected = _durasiJam == jam;
-          final harga = _pricePerHour * jam;
-
-          return GestureDetector(
-            onTap: () => setState(() => _durasiJam = jam),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              margin: const EdgeInsets.only(right: 10),
-              width: 78,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: isSelected
-                    ? CustomColors.mabarBorderFocus
-                    : CustomColors.mabarSurfaceCard,
-                border: Border.all(
+    return Wrap(
+      children: List.generate(
+        pilihJam.length,
+        (index) {
+          final isSelected = selectedJam == index;
+          return FractionallySizedBox(
+            widthFactor: 1 / 4,
+            child: GestureDetector(
+              onTap: () => setState(() => selectedJam = index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                alignment: Alignment.center,
+                margin: const EdgeInsets.all(4),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
                   color: isSelected
                       ? CustomColors.mabarBorderFocus
-                      : CustomColors.mabarBorderSubtle,
-                  width: isSelected ? 1.5 : 1,
+                      : CustomColors.mabarSurfaceCard,
+                  border: Border.all(
+                    color: isSelected
+                        ? CustomColors.mabarBorderFocus
+                        : CustomColors.mabarBorderSubtle,
+                    width: isSelected ? 1.5 : 1,
+                  ),
                 ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '$jam Jam',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: CustomColors.mabarTextPrimary,
-                    ),
+                child: Text(
+                  pilihJam[index]['jam'] as String,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: CustomColors.mabarTextPrimary,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    harga > 0
-                        ? 'Rp ${Formatters.rupiah(harga * 1000)}'
-                        : '– –',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isSelected
-                          ? CustomColors.mabarTextPrimary
-                              .withValues(alpha: 0.85)
-                          : CustomColors.mabarTextSecondary,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           );
         },
       ),
+    );
+  }
+
+  // ── Durasi: slider 1–12 jam ───────────────────────────────────────────────
+
+  Widget _buildDurasiPicker() {
+    return Column(
+      children: [
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: CustomColors.mabarBorderFocus,
+            inactiveTrackColor: CustomColors.mabarSurfaceCard,
+            thumbColor: CustomColors.mabarBorderFocus,
+            overlayColor:
+                CustomColors.mabarBorderFocus.withValues(alpha: 0.18),
+            trackHeight: 5,
+          ),
+          child: Slider(
+            min: 1,
+            max: 12,
+            divisions: 11,
+            value: _durasiJam.toDouble(),
+            label: '$_durasiJam Jam',
+            onChanged: (value) =>
+                setState(() => _durasiJam = value.round()),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('1 Jam',
+                  style: TextStyle(
+                      color: CustomColors.mabarTextSecondary, fontSize: 12)),
+              Text('12 Jam',
+                  style: TextStyle(
+                      color: CustomColors.mabarTextSecondary, fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -958,21 +853,33 @@ class _BookingPageState extends State<BookingPage> {
 
   Widget _summaryRow(IconData icon, String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: CustomColors.mabarTextSecondary),
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(icon, size: 15, color: CustomColors.mabarTextSecondary),
+        ),
         const SizedBox(width: 8),
-        Text(label,
+        SizedBox(
+          width: 84,
+          child: Text(
+            label,
             style: const TextStyle(
-                fontSize: 13, color: CustomColors.mabarTextSecondary)),
-        const Spacer(),
-        Flexible(
+                fontSize: 13, color: CustomColors.mabarTextSecondary),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
           child: Text(
             value,
             textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
               color: CustomColors.mabarTextPrimary,
+              height: 1.3,
             ),
           ),
         ),
@@ -996,13 +903,4 @@ class _BookingPageState extends State<BookingPage> {
       ),
     );
   }
-}
-
-// ─── data class ───────────────────────────────────────────────────────────────
-
-@immutable
-class _JamGroup {
-  final String label;
-  final List<int> hours;
-  const _JamGroup(this.label, this.hours);
 }
