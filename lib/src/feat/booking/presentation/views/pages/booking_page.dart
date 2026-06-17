@@ -61,7 +61,7 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   int get _totalPrice {
-    final pricePerHour = (widget.venue['price_per_hour'] as num).toInt();
+    final pricePerHour = (widget.venue['price_per_hour'] as num?)?.toInt() ?? 0;
     return pricePerHour * _sliderDuration.round();
   }
 
@@ -88,6 +88,18 @@ class _BookingPageState extends State<BookingPage> {
     }
     if (selectedDevice == null) {
       _showError('Pilih perangkat dulu!');
+      return;
+    }
+
+    if (widget.venue['id'] == null ||
+        widget.venue['price_per_hour'] == null ||
+        widget.venue['total_slots'] == null) {
+      _showError('Data tempat tidak lengkap. Pilih dari halaman Beranda ya!');
+      return;
+    }
+
+    if (_startTime!.isBefore(DateTime.now())) {
+      _showError('Tidak bisa booking di waktu yang sudah lewat!');
       return;
     }
 

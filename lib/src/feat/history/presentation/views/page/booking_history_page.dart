@@ -77,7 +77,14 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
             );
           }
 
-          final allData = snapshot.data ?? [];
+          final rawData = snapshot.data ?? [];
+
+          // Abaikan dokumen yang tidak punya waktu valid agar tidak crash.
+          final allData = rawData
+              .where((item) =>
+                  item['start_time'] is Timestamp &&
+                  item['end_time'] is Timestamp)
+              .toList();
 
           // Terapkan filter
           final filtered = _selectedFilter == 'Semua'

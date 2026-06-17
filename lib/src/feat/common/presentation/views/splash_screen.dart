@@ -17,6 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Menunggu 3 detik lalu berpindah ke HomeScreen
     Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
       final user = FirebaseAuth.instance.currentUser;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(

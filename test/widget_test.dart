@@ -1,30 +1,32 @@
-// This is a basic Flutter widget test.
+// Smoke test dasar untuk MabarKeun.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Memverifikasi widget reusable inti ter-render dengan benar.
+// Sengaja memakai widget tanpa efek samping (Timer/Firebase) agar
+// test deterministik dan tidak butuh inisialisasi Firebase.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:mabar_slurd/main.dart';
+import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('MabarButton menampilkan teks dan menanggapi tap', (
+    WidgetTester tester,
+  ) async {
+    var tapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MabarButton(
+            text: 'Booking Sekarang',
+            onTap: () => tapped = true,
+          ),
+        ),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Booking Sekarang'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.text('Booking Sekarang'));
+    expect(tapped, isTrue);
   });
 }
