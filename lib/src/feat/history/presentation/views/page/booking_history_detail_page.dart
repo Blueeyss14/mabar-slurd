@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class BookingHistoryDetailPage extends StatelessWidget {
@@ -91,6 +92,10 @@ class BookingHistoryDetailPage extends StatelessWidget {
             _buildDetailCard(),
             const SizedBox(height: 16),
             _buildPaymentCard(harga, biayaLayanan, totalBayar),
+            if (status == 'Berlangsung') ...[
+              const SizedBox(height: 16),
+              _buildCancelButton(context),
+            ],
             const SizedBox(height: 30),
           ],
         ),
@@ -249,6 +254,96 @@ class BookingHistoryDetailPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCancelButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Colors.redAccent),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        onPressed: () => _confirmCancel(context),
+        icon: const Icon(Icons.close, color: Colors.redAccent),
+        label: const Text(
+          "Batalkan Booking",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.redAccent,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmCancel(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: CustomColors.mabarSurfaceCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            "Batalkan Booking",
+            style: TextStyle(
+              color: CustomColors.mabarTextPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            "Yakin mau membatalkan booking ini? Tindakan ini tidak bisa diurungkan.",
+            style: TextStyle(color: CustomColors.mabarTextSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                "Tidak",
+                style: TextStyle(color: CustomColors.mabarTextSecondary),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                final messenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(context);
+                final ok = await FirestoreService.cancelBooking(bookingId);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      ok
+                          ? 'Booking berhasil dibatalkan'
+                          : 'Gagal membatalkan booking',
+                      style: const TextStyle(
+                        color: CustomColors.mabarTextPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    backgroundColor:
+                        ok ? CustomColors.mabarPurpleBg : Colors.red.shade800,
+                  ),
+                );
+                if (ok) navigator.pop();
+              },
+              child: const Text(
+                "Ya, Batalkan",
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
