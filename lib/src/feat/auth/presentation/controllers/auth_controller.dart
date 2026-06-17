@@ -109,6 +109,46 @@ class AuthController extends GetxController {
   }
 
   // ==========================================
+  // LOGIKA RESET KATA SANDI (LUPA PASSWORD)
+  // ==========================================
+  Future<bool> resetPassword(String email) async {
+    if (email.trim().isEmpty) {
+      _showSnackbar('Peringatan', 'Masukkan email kamu dulu, Slurd!', Colors.orange);
+      return false;
+    }
+
+    try {
+      isLoading.value = true;
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      _showSnackbar(
+        'Terkirim',
+        'Tautan reset kata sandi sudah dikirim ke email kamu.',
+        Colors.green,
+      );
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'invalid-email':
+          errorMessage = 'Format email kamu salah, periksa lagi.';
+          break;
+        case 'user-not-found':
+          errorMessage = 'Email belum terdaftar, Slurd!';
+          break;
+        default:
+          errorMessage = 'Gagal mengirim tautan: ${e.message}';
+      }
+      _showSnackbar('Gagal', errorMessage, Colors.red);
+      return false;
+    } catch (e) {
+      _showSnackbar('Error', 'Gagal terhubung ke server Firebase.', Colors.red);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ==========================================
   // LOGIKA LOGOUT PENGGUNA
   // ==========================================
   Future<void> logoutUser() async {

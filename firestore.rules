@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Firestore Security Rules untuk MabarKeun.
+//
+// Prinsip:
+// - venues: publik untuk dibaca, tidak bisa ditulis dari klien (kelola via console/admin).
+// - bookings: hanya user yang sudah login. Boleh dibaca semua user login
+//   (dibutuhkan getAvailableSlots untuk menghitung slot yang overlap),
+//   tetapi hanya boleh dibuat/diubah/dihapus oleh pemiliknya sendiri.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /venues/{venueId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /bookings/{bookingId} {
+      // Cek ketersediaan slot perlu membaca booking milik user lain.
+      allow read: if request.auth != null;
+
+      // Buat booking baru: harus login dan user_id sesuai pemilik.
+      allow create: if request.auth != null
+                    && request.resource.data.user_id == request.auth.uid;
+
+      // Ubah/hapus (mis. batalkan): hanya pemilik booking.
+      allow update, delete: if request.auth != null
+                            && resource.data.user_id == request.auth.uid;
+    }
+  }
+}

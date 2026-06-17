@@ -41,6 +41,15 @@ class FirestoreService {
     }
   }
 
+  /// Buat booking baru. Ketersediaan slot dicek tepat sebelum menulis.
+  ///
+  /// Catatan: pengecekan ini memakai query koleksi (lihat [getAvailableSlots]),
+  /// sehingga TIDAK bisa dibungkus Firestore transaction (transaction hanya
+  /// boleh membaca dokumen tunggal, bukan menjalankan query). Akibatnya masih
+  /// ada jendela race yang sangat kecil bila dua user memesan slot yang sama
+  /// pada saat bersamaan. Untuk skala aplikasi ini, risiko itu dapat diterima.
+  /// Solusi anti-race penuh memerlukan model "slot-lock" (satu dokumen kunci
+  /// per jam per venue) yang diubah secara atomik di dalam transaction.
   static Future<bool> createBooking({
     required String venueId,
     required String venueName,
@@ -94,5 +103,24 @@ class FirestoreService {
             return {'id': doc.id, ...data};
           }).toList(),
         );
+  }
+
+  /// Batalkan booking: ubah status menjadi 'cancelled'.
+  /// Hanya boleh untuk booking milik user yang sedang login.
+  static Future<bool> cancelBooking(String bookingId) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return false;
+
+    try {
+      final doc = _db.collection('bookings').doc(bookingId);
+      final snapshot = await doc.get();
+      if (!snapshot.exists) return false;
+      if (snapshot.data()?['user_id'] != userId) return false;
+
+      await doc.update({'status': 'cancelled'});
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
