@@ -124,7 +124,7 @@ class AuthController extends GetxController {
       Get.snackbar(
         title,
         message,
-        backgroundColor: color.withOpacity(0.9),
+        backgroundColor: color.withValues(alpha: 0.9),
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
         margin: const EdgeInsets.all(16),

@@ -52,7 +52,8 @@ class BookingHistoryDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // total dari Firestore sudah dalam satuan penuh (bukan ribuan)
+    // total_price disimpan dalam satuan ribuan (mis. 30 = Rp 30.000),
+    // jadi dikali 1000 untuk mendapat rupiah penuh.
     final harga = total * 1000;
     const biayaLayanan = 2000;
     final totalBayar = harga + biayaLayanan;
