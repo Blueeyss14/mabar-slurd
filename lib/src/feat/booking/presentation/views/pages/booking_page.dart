@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/core/notification_service.dart';
+import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/components/calendar_pop.dart';
@@ -31,6 +32,48 @@ class _BookingPageState extends State<BookingPage> {
   /// id komputer yang sudah dibooking di rentang waktu yang sedang dipilih.
   Set<String> _bookedComputers = {};
   bool _loadingAvail = false;
+
+  /// Daftar perangkat venue (dari Firestore; fallback ke daftar standar).
+  List<Map<String, dynamic>> _computers = [];
+  bool _loadingComputers = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadComputers();
+  }
+
+  Future<void> _loadComputers() async {
+    final venueId = widget.venue['id'] as String?;
+    List<Map<String, dynamic>> list = [];
+    if (venueId != null) {
+      list = await FirestoreService.getVenueComputersOnce(venueId);
+    }
+    // Fallback: bila venue belum punya data perangkat di Firestore,
+    // pakai daftar standar agar booking tetap bisa jalan.
+    if (list.isEmpty) {
+      list = komputerList
+          .map((c) => {
+                'id': c['id'],
+                'name': c['name'],
+                'spec': c['spec'],
+                'tier': c['tier'],
+                'type': c['tier'] == 'Console' ? 'Console' : 'PC',
+              })
+          .toList();
+    }
+    if (!mounted) return;
+    setState(() {
+      _computers = list;
+      _loadingComputers = false;
+    });
+  }
+
+  bool _isConsole(Map<String, dynamic> c) =>
+      c['type'] == 'Console' || c['tier'] == 'Console';
+
+  String _iconFor(Map<String, dynamic> c) =>
+      _isConsole(c) ? AssetIcons.gamepad : AssetIcons.pc;
 
   // ─── computed ──────────────────────────────────────────────────────────────
 
@@ -84,7 +127,8 @@ class _BookingPageState extends State<BookingPage> {
       _loadingAvail = false;
       // Jika komputer yang sedang dipilih ternyata sudah dibooking, batalkan.
       if (selectedKomputer != null &&
-          booked.contains(komputerList[selectedKomputer!]['id'])) {
+          selectedKomputer! < _computers.length &&
+          booked.contains(_computers[selectedKomputer!]['id'])) {
         selectedKomputer = null;
       }
     });
@@ -145,7 +189,7 @@ class _BookingPageState extends State<BookingPage> {
 
     setState(() => _isLoading = true);
 
-    final komputer = komputerList[selectedKomputer!];
+    final komputer = _computers[selectedKomputer!];
     bool success = false;
     try {
       success = await FirestoreService.createBooking(
@@ -202,7 +246,7 @@ class _BookingPageState extends State<BookingPage> {
       return;
     }
 
-    final komputer = komputerList[selectedKomputer!];
+    final komputer = _computers[selectedKomputer!];
 
     showDialog(
       context: context,
@@ -370,7 +414,7 @@ class _BookingPageState extends State<BookingPage> {
                   _buildSectionLabel('Pilih Perangkat',
                       icon: Icons.devices_outlined,
                       chip: selectedKomputer != null
-                          ? komputerList[selectedKomputer!]['name']
+                          ? _computers[selectedKomputer!]['name']
                           : null),
                   const SizedBox(height: 12),
                   _buildKomputerSection(),
@@ -634,17 +678,27 @@ class _BookingPageState extends State<BookingPage> {
   // ── Pilih Perangkat: dua section (PC + Console) ───────────────────────────
 
   Widget _buildKomputerSection() {
-    final pcIndices = komputerList
+    if (_loadingComputers) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: CircularProgressIndicator(
+              color: CustomColors.mabarBorderFocus),
+        ),
+      );
+    }
+
+    final pcIndices = _computers
         .asMap()
         .entries
-        .where((e) => (e.value['tier'] as String) != 'Console')
+        .where((e) => !_isConsole(e.value))
         .map((e) => e.key)
         .toList();
 
-    final consoleIndices = komputerList
+    final consoleIndices = _computers
         .asMap()
         .entries
-        .where((e) => (e.value['tier'] as String) == 'Console')
+        .where((e) => _isConsole(e.value))
         .map((e) => e.key)
         .toList();
 
@@ -652,14 +706,18 @@ class _BookingPageState extends State<BookingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _availabilityHint(),
-        _deviceSectionHeader(Icons.computer_outlined, 'PC', pcIndices.length),
-        const SizedBox(height: 8),
-        _buildKomputerGrid(pcIndices),
-        const SizedBox(height: 20),
-        _deviceSectionHeader(
-            Icons.gamepad_outlined, 'Console', consoleIndices.length),
-        const SizedBox(height: 8),
-        _buildKomputerGrid(consoleIndices),
+        if (pcIndices.isNotEmpty) ...[
+          _deviceSectionHeader(Icons.computer_outlined, 'PC', pcIndices.length),
+          const SizedBox(height: 8),
+          _buildKomputerGrid(pcIndices),
+        ],
+        if (consoleIndices.isNotEmpty) ...[
+          if (pcIndices.isNotEmpty) const SizedBox(height: 20),
+          _deviceSectionHeader(
+              Icons.gamepad_outlined, 'Console', consoleIndices.length),
+          const SizedBox(height: 8),
+          _buildKomputerGrid(consoleIndices),
+        ],
       ],
     );
   }
@@ -752,7 +810,7 @@ class _BookingPageState extends State<BookingPage> {
       ),
       itemBuilder: (context, i) {
         final index = indices[i];
-        final komputer = komputerList[index];
+        final komputer = _computers[index];
         final isSelected = selectedKomputer == index;
         final isBooked = _bookedComputers.contains(komputer['id']);
         final tierColor = _tierColor(komputer['tier'] as String);
@@ -796,7 +854,7 @@ class _BookingPageState extends State<BookingPage> {
                       Row(
                         children: [
                           Image.asset(
-                            komputer['icon'] as String,
+                            _iconFor(komputer),
                             width: 22,
                             color: nameColor,
                           ),
@@ -906,7 +964,7 @@ class _BookingPageState extends State<BookingPage> {
             Icons.computer_outlined,
             'Perangkat',
             selectedKomputer != null
-                ? '${komputerList[selectedKomputer!]['name']} · ${komputerList[selectedKomputer!]['spec']}'
+                ? '${_computers[selectedKomputer!]['name']} · ${_computers[selectedKomputer!]['spec']}'
                 : '–',
           ),
           _summaryDivider(),
