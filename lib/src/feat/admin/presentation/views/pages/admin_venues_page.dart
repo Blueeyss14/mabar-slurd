@@ -17,6 +17,52 @@ class AdminVenuesPage extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmDelete(
+      BuildContext context, Map<String, dynamic> v) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Venue?',
+            style:
+                TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Warnet "${v['name'] ?? '-'}" akan dihapus permanen. Lanjutkan?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal',
+                style: TextStyle(color: CustomColors.mabarTextSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Hapus',
+                style: TextStyle(
+                    color: Colors.red.shade400, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final success = await FirestoreService.deleteVenue(v['id'] as String);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success ? 'Venue dihapus.' : 'Gagal menghapus venue.',
+          style: const TextStyle(
+              color: CustomColors.mabarTextPrimary,
+              fontWeight: FontWeight.bold),
+        ),
+        backgroundColor:
+            success ? CustomColors.mabarPurpleBg : Colors.red.shade800,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,6 +200,14 @@ class AdminVenuesPage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                     ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => _confirmDelete(context, v),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(Icons.delete_outline,
+                        size: 20, color: Colors.red.shade400),
                   ),
                 ),
             ],
