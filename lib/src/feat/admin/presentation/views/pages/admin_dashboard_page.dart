@@ -204,26 +204,102 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 b['start_time'] is Timestamp && b['end_time'] is Timestamp)
             .toList();
 
-        if (all.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Center(
-              child: MabarEmptyState(
-                icon: Icons.inbox_outlined,
-                title: "Belum ada booking",
-                subtitle: "Pesanan yang masuk akan muncul di sini.",
-              ),
+        return Column(
+          children: [
+            _statsBar(all),
+            Expanded(
+              child: all.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Center(
+                        child: MabarEmptyState(
+                          icon: Icons.inbox_outlined,
+                          title: "Belum ada booking",
+                          subtitle: "Pesanan yang masuk akan muncul di sini.",
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                      itemCount: all.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) => _bookingCard(all[i]),
+                    ),
             ),
-          );
-        }
-
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-          itemCount: all.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, i) => _bookingCard(all[i]),
+          ],
         );
       },
+    );
+  }
+
+  Widget _statsBar(List<Map<String, dynamic>> all) {
+    final now = DateTime.now();
+    bool isToday(DateTime d) =>
+        d.year == now.year && d.month == now.month && d.day == now.day;
+
+    // Hitung dari booking yang tidak dibatalkan.
+    final aktif =
+        all.where((b) => (b['status'] as String? ?? 'active') != 'cancelled');
+    final totalBooking = aktif.length;
+    final hariIni = aktif
+        .where((b) => isToday((b['start_time'] as Timestamp).toDate()))
+        .length;
+    final pendapatan = aktif.fold<int>(
+        0, (acc, b) => acc + ((b['total_price'] as num?)?.toInt() ?? 0));
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+      child: Row(
+        children: [
+          _statCard(Icons.receipt_long_outlined, '$totalBooking', 'Booking',
+              CustomColors.mabarBorderFocus),
+          const SizedBox(width: 10),
+          _statCard(Icons.today_outlined, '$hariIni', 'Hari Ini',
+              CustomColors.mabarGreen),
+          const SizedBox(width: 10),
+          _statCard(Icons.payments_outlined,
+              'Rp ${Formatters.rupiah(pendapatan * 1000)}', 'Pendapatan',
+              CustomColors.mabarCyan),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard(IconData icon, String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        decoration: BoxDecoration(
+          color: CustomColors.mabarSurfaceCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: CustomColors.mabarBorderSubtle),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                color: CustomColors.mabarTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

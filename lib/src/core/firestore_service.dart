@@ -488,6 +488,16 @@ class FirestoreService {
     }
   }
 
+  /// Hapus venue (beserta dokumennya). Hanya admin pemilik (dijaga rules).
+  static Future<bool> deleteVenue(String venueId) async {
+    try {
+      await _db.collection('venues').doc(venueId).delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Daftar venue milik admin yang sedang login (owner_uid == uid).
   static Stream<List<Map<String, dynamic>>> getMyVenues() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
