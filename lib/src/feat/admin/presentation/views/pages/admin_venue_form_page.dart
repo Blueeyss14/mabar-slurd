@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
@@ -20,6 +22,11 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
   final _badgeController = TextEditingController();
   bool _isLoading = false;
 
+  double? _lat;
+  double? _lng;
+  String? _address;
+  bool _loadingLoc = false;
+
   bool get _isEdit => widget.venue != null;
 
   @override
@@ -31,6 +38,56 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
       _priceController.text =
           ((v['price_per_hour'] as num?)?.toInt() ?? 0).toString();
       _badgeController.text = v['badge'] as String? ?? '';
+      _lat = (v['lat'] as num?)?.toDouble();
+      _lng = (v['lng'] as num?)?.toDouble();
+      _address = v['address'] as String?;
+    }
+  }
+
+  Future<void> _pakaiLokasiSaya() async {
+    setState(() => _loadingLoc = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _snack('GPS belum aktif. Aktifkan dulu ya.', isError: true);
+        return;
+      }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        _snack('Izin lokasi ditolak.', isError: true);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition();
+      String? addr;
+      try {
+        final placemarks =
+            await placemarkFromCoordinates(pos.latitude, pos.longitude);
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          addr = [p.street, p.subLocality, p.locality, p.subAdministrativeArea]
+              .where((e) => e != null && e.isNotEmpty)
+              .join(', ');
+        }
+      } catch (_) {
+        // geocoding gagal -> simpan koordinat saja
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _lat = pos.latitude;
+        _lng = pos.longitude;
+        _address = (addr != null && addr.isNotEmpty)
+            ? addr
+            : '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+      });
+    } catch (e) {
+      _snack('Gagal ambil lokasi: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _loadingLoc = false);
     }
   }
 
@@ -65,12 +122,18 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
         name: name,
         pricePerHour: price,
         badge: _badgeController.text,
+        lat: _lat,
+        lng: _lng,
+        address: _address,
       );
     } else {
       final id = await FirestoreService.createVenue(
         name: name,
         pricePerHour: price,
         badge: _badgeController.text,
+        lat: _lat,
+        lng: _lng,
+        address: _address,
       );
       ok = id != null;
     }
@@ -157,6 +220,9 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
               hintText: 'Populer / Baru / 24 Jam',
               iconData: Icons.local_offer_outlined,
             ),
+            const SizedBox(height: 20),
+            _label('LOKASI WARNET'),
+            _buildLocationBox(),
             const SizedBox(height: 36),
             SizedBox(
               width: double.infinity,
@@ -191,6 +257,92 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
             const SizedBox(height: 30),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLocationBox() {
+    final hasLoc = _lat != null && _lng != null;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: CustomColors.mabarSurfaceInput,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: CustomColors.mabarBorderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasLoc ? Icons.location_on : Icons.location_off_outlined,
+                size: 18,
+                color: hasLoc
+                    ? CustomColors.mabarBorderFocus
+                    : CustomColors.mabarTextTertiary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  hasLoc
+                      ? (_address ?? 'Lokasi tersimpan')
+                      : 'Lokasi belum diatur',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: hasLoc
+                        ? CustomColors.mabarTextPrimary
+                        : CustomColors.mabarTextSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (hasLoc) ...[
+            const SizedBox(height: 4),
+            Text(
+              '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
+              style: const TextStyle(
+                fontSize: 11,
+                color: CustomColors.mabarTextTertiary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: CustomColors.mabarBorderFocus),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: _loadingLoc ? null : _pakaiLokasiSaya,
+              icon: _loadingLoc
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: CustomColors.mabarBorderFocus,
+                      ),
+                    )
+                  : const Icon(Icons.my_location,
+                      size: 17, color: CustomColors.mabarBorderFocus),
+              label: Text(
+                _loadingLoc
+                    ? 'Mengambil lokasi…'
+                    : (hasLoc ? 'Perbarui Lokasi' : 'Pakai Lokasi Saya'),
+                style: const TextStyle(
+                  color: CustomColors.mabarBorderFocus,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
