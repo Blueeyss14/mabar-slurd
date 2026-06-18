@@ -6,14 +6,19 @@ Aplikasi cari & booking tempat gaming (warnet/rental PS) berbasis Flutter + Fire
 
 Sudah di-seed ke Firebase project `mabar-slurd`. Tinggal login pakai akun di bawah:
 
-| Role | Email | Password | Masuk ke |
-|------|-------|----------|----------|
-| 🎮 **Gamer (user)** | `gamer@mabarkeun.com` | `Gamer123` | Tampilan user: cari tempat, booking, riwayat |
-| 🛠️ **Admin Warnet** | `admin@mabarkeun.com` | `Admin123` | Dashboard admin: booking masuk, kelola venue |
+| Role | Email | Password | Warnet yang dikelola |
+|------|-------|----------|----------------------|
+| 🎮 **Gamer (user)** | `gamer@mabarkeun.com` | `Gamer123` | — (cari tempat, booking, riwayat) |
+| 🛠️ **Admin 1** | `admin@mabarkeun.com` | `Admin123` | GG Arena Demo |
+| 🛠️ **Admin 2** | `admin2@mabarkeun.com` | `Admin123` | Nexus Esports |
+| 🛠️ **Admin 3** | `admin3@mabarkeun.com` | `Admin123` | CyberShop Hub |
 
-Akun admin sudah punya 1 venue contoh (**GG Arena Demo**), jadi dashboard-nya langsung ada isinya.
-Coba alurnya: login **admin** lihat venue → logout → login **gamer** → booking GG Arena Demo →
-logout → login **admin** lagi → booking-nya muncul di tab Booking, bisa **Tandai Selesai**.
+Setiap warnet yang tampil di beranda user **dimiliki salah satu admin** di atas, lengkap dengan
+foto, jam buka, fasilitas, lokasi, harga, dan 15 unit perangkat — semuanya **bisa diedit** admin
+masing-masing lewat tab **Venue Saya**.
+
+Alur coba: login **admin** lihat/kelola warnet → logout → login **gamer** → booking salah satu
+warnet → logout → login **admin** pemiliknya → booking muncul di tab Booking, bisa **Tandai Selesai**.
 
 > Daftar akun baru juga bisa lewat tombol **Daftar**, ada pilihan tipe akun **Gamer** / **Admin Warnet**.
 
