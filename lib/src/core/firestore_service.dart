@@ -286,6 +286,159 @@ class FirestoreService {
     }
   }
 
+  // ── Perangkat (komputer/konsol) per-venue ─────────────────────────────────
+  // Disimpan di subcollection venues/{venueId}/computers.
+  // Field: code (mis. PC-01), name, spec, tier, type (PC/Console).
+
+  /// Stream daftar perangkat sebuah venue (untuk admin), diurutkan per code.
+  static Stream<List<Map<String, dynamic>>> getVenueComputers(String venueId) {
+    return _db
+        .collection('venues')
+        .doc(venueId)
+        .collection('computers')
+        .snapshots()
+        .map((snap) {
+          final list = snap.docs
+              .map((d) => {'docId': d.id, ...d.data()})
+              .toList();
+          list.sort((a, b) =>
+              (a['code'] as String? ?? '').compareTo(b['code'] as String? ?? ''));
+          return list;
+        });
+  }
+
+  /// Ambil perangkat venue sekali (untuk halaman booking).
+  /// Mengembalikan list dengan key 'id' = code agar konsisten dengan booking lama.
+  static Future<List<Map<String, dynamic>>> getVenueComputersOnce(
+      String venueId) async {
+    try {
+      final snap = await _db
+          .collection('venues')
+          .doc(venueId)
+          .collection('computers')
+          .get();
+      final list = snap.docs.map((d) {
+        final data = d.data();
+        return {
+          'id': data['code'] ?? d.id,
+          'docId': d.id,
+          'name': data['name'] ?? data['code'] ?? d.id,
+          'spec': data['spec'] ?? '-',
+          'tier': data['tier'] ?? 'Reguler',
+          'type': data['type'] ?? 'PC',
+        };
+      }).toList();
+      list.sort((a, b) =>
+          (a['id'] as String).compareTo(b['id'] as String));
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<bool> addComputer(
+    String venueId, {
+    required String code,
+    required String name,
+    required String spec,
+    required String tier,
+    required String type,
+  }) async {
+    try {
+      await _db.collection('venues').doc(venueId).collection('computers').add({
+        'code': code.trim(),
+        'name': name.trim(),
+        'spec': spec.trim(),
+        'tier': tier,
+        'type': type,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> updateComputer(
+    String venueId,
+    String docId, {
+    required String code,
+    required String name,
+    required String spec,
+    required String tier,
+    required String type,
+  }) async {
+    try {
+      await _db
+          .collection('venues')
+          .doc(venueId)
+          .collection('computers')
+          .doc(docId)
+          .update({
+        'code': code.trim(),
+        'name': name.trim(),
+        'spec': spec.trim(),
+        'tier': tier,
+        'type': type,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> deleteComputer(String venueId, String docId) async {
+    try {
+      await _db
+          .collection('venues')
+          .doc(venueId)
+          .collection('computers')
+          .doc(docId)
+          .delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Isi cepat 15 unit standar (PC-01..PC-12, PS5-01..03) untuk venue baru.
+  static Future<bool> seedDefaultComputers(String venueId) async {
+    const defaults = [
+      {'code': 'PC-01', 'spec': 'i3 / GTX 1650', 'tier': 'Reguler', 'type': 'PC'},
+      {'code': 'PC-02', 'spec': 'i3 / GTX 1650', 'tier': 'Reguler', 'type': 'PC'},
+      {'code': 'PC-03', 'spec': 'i5 / GTX 1660', 'tier': 'Reguler', 'type': 'PC'},
+      {'code': 'PC-04', 'spec': 'i5 / GTX 1660', 'tier': 'Reguler', 'type': 'PC'},
+      {'code': 'PC-05', 'spec': 'i5 / RTX 3060', 'tier': 'Gaming', 'type': 'PC'},
+      {'code': 'PC-06', 'spec': 'i5 / RTX 3060', 'tier': 'Gaming', 'type': 'PC'},
+      {'code': 'PC-07', 'spec': 'i7 / RTX 3070', 'tier': 'Gaming', 'type': 'PC'},
+      {'code': 'PC-08', 'spec': 'i7 / RTX 3070', 'tier': 'Gaming', 'type': 'PC'},
+      {'code': 'PC-09', 'spec': 'i7 / RTX 4070', 'tier': 'VIP', 'type': 'PC'},
+      {'code': 'PC-10', 'spec': 'i9 / RTX 4070', 'tier': 'VIP', 'type': 'PC'},
+      {'code': 'PC-11', 'spec': 'i9 / RTX 4080', 'tier': 'VIP', 'type': 'PC'},
+      {'code': 'PC-12', 'spec': 'i9 / RTX 4090', 'tier': 'VIP', 'type': 'PC'},
+      {'code': 'PS5-01', 'spec': 'PlayStation 5', 'tier': 'Console', 'type': 'Console'},
+      {'code': 'PS5-02', 'spec': 'PlayStation 5', 'tier': 'Console', 'type': 'Console'},
+      {'code': 'PS5-03', 'spec': 'PlayStation 5', 'tier': 'Console', 'type': 'Console'},
+    ];
+    try {
+      final batch = _db.batch();
+      final col =
+          _db.collection('venues').doc(venueId).collection('computers');
+      for (final c in defaults) {
+        batch.set(col.doc(), {
+          'code': c['code'],
+          'name': c['code'],
+          'spec': c['spec'],
+          'tier': c['tier'],
+          'type': c['type'],
+        });
+      }
+      await batch.commit();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Perbarui info venue. Hanya field yang dikirim yang diubah.
   static Future<bool> updateVenue({
     required String venueId,

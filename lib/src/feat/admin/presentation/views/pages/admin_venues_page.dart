@@ -4,6 +4,7 @@ import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
 import 'package:mabar_slurd/src/feat/admin/presentation/views/pages/admin_venue_form_page.dart';
+import 'package:mabar_slurd/src/feat/admin/presentation/views/pages/admin_computers_page.dart';
 
 /// Daftar venue milik admin. Bisa tambah venue baru & edit info venue.
 class AdminVenuesPage extends StatelessWidget {
@@ -181,9 +182,58 @@ class AdminVenuesPage extends StatelessWidget {
                     color: CustomColors.mabarTextSecondary,
                   ),
                 ),
-                const Spacer(),
-                const Icon(Icons.edit_outlined,
-                    size: 16, color: CustomColors.mabarTextTertiary),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openForm(context, venue: v),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(
+                          color: CustomColors.mabarBorderSubtle),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 16, color: CustomColors.mabarTextSecondary),
+                    label: const Text('Edit Info',
+                        style: TextStyle(
+                            color: CustomColors.mabarTextSecondary,
+                            fontSize: 13)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminComputersPage(
+                          venueId: v['id'] as String,
+                          venueName: v['name'] as String? ?? '-',
+                        ),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          CustomColors.mabarBorderFocus.withValues(alpha: 0.15),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.devices_other_outlined,
+                        size: 16, color: CustomColors.mabarBorderFocus),
+                    label: const Text('Perangkat',
+                        style: TextStyle(
+                            color: CustomColors.mabarBorderFocus,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                ),
               ],
             ),
           ],
