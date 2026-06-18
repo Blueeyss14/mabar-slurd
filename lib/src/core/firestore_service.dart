@@ -530,6 +530,60 @@ class FirestoreService {
     }
   }
 
+  // ── Ulasan (rating + komentar) per-venue ──────────────────────────────────
+  // Disimpan di subcollection venues/{venueId}/reviews.
+
+  /// Kirim ulasan untuk sebuah venue. user_id diikat ke akun yang login.
+  static Future<bool> addReview(
+    String venueId, {
+    required int rating,
+    required String comment,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    try {
+      await _db
+          .collection('venues')
+          .doc(venueId)
+          .collection('reviews')
+          .add({
+        'user_id': user.uid,
+        'user_name': user.displayName ?? 'Pengguna',
+        'rating': rating,
+        'comment': comment.trim(),
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ambil ulasan sebuah venue (terbaru dulu, diurutkan klien).
+  static Future<List<Map<String, dynamic>>> getVenueReviews(
+      String venueId) async {
+    try {
+      final snap = await _db
+          .collection('venues')
+          .doc(venueId)
+          .collection('reviews')
+          .get();
+      final list =
+          snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+      list.sort((a, b) {
+        final at = (a['created_at'] as Timestamp?)?.toDate();
+        final bt = (b['created_at'] as Timestamp?)?.toDate();
+        if (at == null && bt == null) return 0;
+        if (at == null) return -1;
+        if (bt == null) return 1;
+        return bt.compareTo(at);
+      });
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Hapus venue (beserta dokumennya). Hanya admin pemilik (dijaga rules).
   static Future<bool> deleteVenue(String venueId) async {
     try {
