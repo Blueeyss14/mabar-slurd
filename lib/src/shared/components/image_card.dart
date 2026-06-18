@@ -8,6 +8,7 @@ class MabarImageCard extends StatelessWidget {
   final double distance;
   final int price;
   final String? badge;
+  final String? imageUrl;
   final void Function()? onTap;
 
   const MabarImageCard({
@@ -17,6 +18,7 @@ class MabarImageCard extends StatelessWidget {
     this.distance = 0.8,
     this.price = 15,
     this.badge,
+    this.imageUrl,
     this.onTap,
   });
 
@@ -47,7 +49,19 @@ class MabarImageCard extends StatelessWidget {
                 SizedBox(
                   height: 150,
                   width: double.infinity,
-                  child: Image.asset(AssetImages.gaming, fit: BoxFit.cover),
+                  child: (imageUrl != null && imageUrl!.isNotEmpty)
+                      ? Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Image.asset(AssetImages.gaming, fit: BoxFit.cover),
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                                  ? child
+                                  : Image.asset(AssetImages.gaming,
+                                      fit: BoxFit.cover),
+                        )
+                      : Image.asset(AssetImages.gaming, fit: BoxFit.cover),
                 ),
                 Positioned.fill(
                   child: DecoratedBox(

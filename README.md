@@ -34,6 +34,8 @@ flutter run
 
 ## 👤 Role & Admin
 
+- Admin bisa kelola tiap warnetnya: **info & harga**, **perangkat per-unit**
+  (PC/Console + spek), **lokasi** (GPS), **foto** (URL), **jam buka**, dan **fasilitas**.
 - **Role** disimpan di `users/{uid}.role` (`user` / `admin`), dipilih saat registrasi.
 - Sebagai fallback, siapa pun yang **memiliki venue** (`venues.owner_uid == uid`)
   otomatis dianggap **admin** — jadi admin = pemilik warnet.
