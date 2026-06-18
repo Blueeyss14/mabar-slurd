@@ -294,6 +294,9 @@ class FirestoreService {
         if (facilities != null) 'facilities': facilities,
         'created_at': FieldValue.serverTimestamp(),
       });
+      // Warnet baru langsung diisi 15 unit standar agar siap menerima booking.
+      // Admin bisa edit/hapus/tambah sesuai kondisi warnet aslinya.
+      await seedDefaultComputers(ref.id);
       return ref.id;
     } catch (_) {
       return null;

@@ -6,7 +6,6 @@ import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/components/calendar_pop.dart';
-import 'package:mabar_slurd/src/feat/booking/presentation/widgets/komputer.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
 import 'package:get/get.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
@@ -48,19 +47,6 @@ class _BookingPageState extends State<BookingPage> {
     List<Map<String, dynamic>> list = [];
     if (venueId != null) {
       list = await FirestoreService.getVenueComputersOnce(venueId);
-    }
-    // Fallback: bila venue belum punya data perangkat di Firestore,
-    // pakai daftar standar agar booking tetap bisa jalan.
-    if (list.isEmpty) {
-      list = komputerList
-          .map((c) => {
-                'id': c['id'],
-                'name': c['name'],
-                'spec': c['spec'],
-                'tier': c['tier'],
-                'type': c['tier'] == 'Console' ? 'Console' : 'PC',
-              })
-          .toList();
     }
     if (!mounted) return;
     setState(() {
@@ -684,6 +670,33 @@ class _BookingPageState extends State<BookingPage> {
         child: Center(
           child: CircularProgressIndicator(
               color: CustomColors.mabarBorderFocus),
+        ),
+      );
+    }
+
+    if (_computers.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+        decoration: BoxDecoration(
+          color: CustomColors.mabarSurfaceCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: CustomColors.mabarBorderSubtle),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.devices_other_outlined,
+                size: 36, color: CustomColors.mabarTextTertiary),
+            SizedBox(height: 10),
+            Text(
+              'Warnet ini belum menambahkan perangkat.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: CustomColors.mabarTextSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       );
     }
