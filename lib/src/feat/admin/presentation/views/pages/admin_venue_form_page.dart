@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/core/storage_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
@@ -28,6 +30,7 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
   double? _lng;
   String? _address;
   bool _loadingLoc = false;
+  bool _uploadingImage = false;
 
   final Set<String> _facilities = {};
   static const _facilityOptions = [
@@ -108,6 +111,27 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
       _snack('Gagal ambil lokasi: $e', isError: true);
     } finally {
       if (mounted) setState(() => _loadingLoc = false);
+    }
+  }
+
+  Future<void> _pickAndUpload() async {
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1280,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+
+    setState(() => _uploadingImage = true);
+    final url = await StorageService.uploadVenueImage(picked.path);
+    if (!mounted) return;
+    setState(() {
+      _uploadingImage = false;
+      if (url != null) _imageController.text = url;
+    });
+    if (url == null) {
+      _snack('Gagal upload foto. Pastikan Storage aktif.', isError: true);
     }
   }
 
@@ -249,11 +273,51 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
               iconData: Icons.local_offer_outlined,
             ),
             const SizedBox(height: 20),
-            _label('FOTO WARNET (URL)'),
+            _label('FOTO WARNET'),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: CustomColors.mabarBorderFocus),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: _uploadingImage ? null : _pickAndUpload,
+                icon: _uploadingImage
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: CustomColors.mabarBorderFocus,
+                        ),
+                      )
+                    : const Icon(Icons.photo_library_outlined,
+                        size: 18, color: CustomColors.mabarBorderFocus),
+                label: Text(
+                  _uploadingImage ? 'Mengunggah…' : 'Upload dari Galeri',
+                  style: const TextStyle(
+                    color: CustomColors.mabarBorderFocus,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Atau tempel URL gambar:',
+              style: TextStyle(
+                fontSize: 11,
+                color: CustomColors.mabarTextTertiary,
+              ),
+            ),
+            const SizedBox(height: 6),
             MabarTextField(
               controller: _imageController,
               hintText: 'https://...jpg',
-              iconData: Icons.image_outlined,
+              iconData: Icons.link,
             ),
             _buildImagePreview(),
             const SizedBox(height: 20),

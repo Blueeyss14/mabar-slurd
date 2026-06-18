@@ -46,6 +46,17 @@ service cloud.firestore {
         allow write: if isSignedIn()
                      && venueOwner(venueId) == request.auth.uid;
       }
+
+      // Ulasan per-venue.
+      // Dibaca publik; dibuat user login dengan user_id sesuai dirinya;
+      // diubah/hapus hanya oleh penulis ulasan.
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn()
+                      && request.resource.data.user_id == request.auth.uid;
+        allow update, delete: if isSignedIn()
+                              && resource.data.user_id == request.auth.uid;
+      }
     }
 
     match /bookings/{bookingId} {

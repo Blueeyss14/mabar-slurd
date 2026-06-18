@@ -5,6 +5,7 @@ import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/detail/presentation/widgets/detail_page_widgets.dart';
+import 'package:mabar_slurd/src/feat/detail/presentation/widgets/venue_reviews.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/pages/booking_page.dart';
 
 class DetailScreen extends StatelessWidget {
@@ -330,6 +331,10 @@ class DetailScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (venue['id'] != null) ...[
+                    const SizedBox(height: 24),
+                    VenueReviews(venueId: venue['id'] as String),
+                  ],
                   const SizedBox(height: 15),
                   MabarButton(
                     onTap: () => Navigator.push(
