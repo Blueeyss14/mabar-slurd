@@ -38,6 +38,14 @@ service cloud.firestore {
       // Ubah/hapus venue: hanya admin pemiliknya.
       allow update, delete: if isSignedIn()
                             && resource.data.owner_uid == request.auth.uid;
+
+      // Perangkat (komputer/konsol) per-venue.
+      // Dibaca publik (halaman booking); ditulis hanya admin pemilik venue.
+      match /computers/{computerId} {
+        allow read: if true;
+        allow write: if isSignedIn()
+                     && venueOwner(venueId) == request.auth.uid;
+      }
     }
 
     match /bookings/{bookingId} {

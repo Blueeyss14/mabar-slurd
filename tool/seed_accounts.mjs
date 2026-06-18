@@ -127,6 +127,61 @@ async function createVenue(idToken, ownerUid, name, price) {
   return d.name.split('/').pop();
 }
 
+const DEFAULT_COMPUTERS = [
+  { code: 'PC-01', spec: 'i3 / GTX 1650', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-02', spec: 'i3 / GTX 1650', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-03', spec: 'i5 / GTX 1660', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-04', spec: 'i5 / GTX 1660', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-05', spec: 'i5 / RTX 3060', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-06', spec: 'i5 / RTX 3060', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-07', spec: 'i7 / RTX 3070', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-08', spec: 'i7 / RTX 3070', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-09', spec: 'i7 / RTX 4070', tier: 'VIP', type: 'PC' },
+  { code: 'PC-10', spec: 'i9 / RTX 4070', tier: 'VIP', type: 'PC' },
+  { code: 'PC-11', spec: 'i9 / RTX 4080', tier: 'VIP', type: 'PC' },
+  { code: 'PC-12', spec: 'i9 / RTX 4090', tier: 'VIP', type: 'PC' },
+  { code: 'PS5-01', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
+  { code: 'PS5-02', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
+  { code: 'PS5-03', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
+];
+
+async function computerCount(idToken, venuePath) {
+  const res = await fetch(`https://firestore.googleapis.com/v1/${venuePath}/computers`, {
+    headers: { ...H, Authorization: `Bearer ${idToken}` },
+  });
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.status || d.error.message);
+  return (d.documents || []).length;
+}
+
+async function addComputer(idToken, venuePath, c) {
+  const res = await fetch(
+    `https://firestore.googleapis.com/v1/${venuePath}/computers`,
+    {
+      method: 'POST',
+      headers: { ...H, Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({ fields: {
+        code: { stringValue: c.code },
+        name: { stringValue: c.code },
+        spec: { stringValue: c.spec },
+        tier: { stringValue: c.tier },
+        type: { stringValue: c.type },
+      } }),
+    },
+  );
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.status || d.error.message);
+}
+
+async function seedComputers(idToken, venuePath) {
+  const n = await computerCount(idToken, venuePath);
+  if (n > 0) return `sudah ada ${n} unit, skip`;
+  for (const c of DEFAULT_COMPUTERS) {
+    await addComputer(idToken, venuePath, c);
+  }
+  return `${DEFAULT_COMPUTERS.length} unit ditambahkan`;
+}
+
 (async () => {
   console.log('GAMER (gamer@mabarkeun.com / Gamer123)');
   const gamer = await ensureAccount('gamer@mabarkeun.com', 'Gamer123', 'Gamer Demo');
@@ -156,6 +211,8 @@ async function createVenue(idToken, ownerUid, name, price) {
   if (venues.length > 0) {
     await tryStep('lengkapi venue demo (lokasi/foto/jam/fasilitas)',
         () => patchVenueDemo(admin.idToken, venues[0].path));
+    await tryStep('seed perangkat venue demo (15 unit + spek)',
+        () => seedComputers(admin.idToken, venues[0].path));
   }
 
   console.log('\nSelesai. Login pakai akun di atas.');
