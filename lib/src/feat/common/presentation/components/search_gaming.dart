@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
-import 'package:mabar_slurd/src/feat/common/presentation/components/filter_sheet.dart';
 
 class SearchGaming extends StatelessWidget {
-  const SearchGaming({super.key});
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onFilterTap;
+  final bool filterActive;
+
+  const SearchGaming({
+    super.key,
+    this.onChanged,
+    this.onFilterTap,
+    this.filterActive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,16 +26,17 @@ class SearchGaming extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: CustomColors.mabarBorderSubtle),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.search_rounded,
                   color: CustomColors.mabarTextSecondary,
                   size: 22,
                 ),
                 Expanded(
                   child: TextField(
-                    decoration: InputDecoration(
+                    onChanged: onChanged,
+                    decoration: const InputDecoration(
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 14),
@@ -37,7 +46,7 @@ class SearchGaming extends StatelessWidget {
                       ),
                       hintText: "Cari tempat gaming",
                     ),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: CustomColors.mabarTextPrimary,
                       fontSize: 14,
                     ),
@@ -49,14 +58,7 @@ class SearchGaming extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         GestureDetector(
-          onTap: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => const FilterSheet(),
-            );
-          },
+          onTap: onFilterTap,
           child: Container(
             width: 52,
             height: 52,
@@ -64,9 +66,30 @@ class SearchGaming extends StatelessWidget {
               color: CustomColors.mabarBorderFocus,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.tune_rounded,
-              color: CustomColors.mabarTextPrimary,
+            child: Stack(
+              children: [
+                const Center(
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: CustomColors.mabarTextPrimary,
+                  ),
+                ),
+                if (filterActive)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: CustomColors.mabarCyan,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: CustomColors.mabarBorderFocus, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
