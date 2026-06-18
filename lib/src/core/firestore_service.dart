@@ -212,25 +212,51 @@ class FirestoreService {
   }
 
   /// Ambil role user yang sedang login: 'admin' atau 'user'.
-  /// Default 'user' bila dokumen/role belum ada.
+  ///
+  /// Dua sumber:
+  /// 1. Field `role` di dokumen users/{uid} (sumber utama, diset saat daftar).
+  /// 2. Fallback: bila user memiliki venue (owner_uid == uid) → dianggap admin.
+  ///    Berguna ketika dokumen users belum bisa ditulis (mis. security rules
+  ///    untuk koleksi users belum di-deploy), sebab admin = pemilik warnet.
   static Future<String> getCurrentUserRole() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return 'user';
+
     try {
       final snapshot = await _db.collection('users').doc(userId).get();
       final role = snapshot.data()?['role'] as String?;
-      return role == 'admin' ? 'admin' : 'user';
+      if (role == 'admin') return 'admin';
+      if (role == 'user') return 'user';
     } catch (_) {
-      return 'user';
+      // lanjut ke fallback
     }
+
+    try {
+      final venues = await _db
+          .collection('venues')
+          .where('owner_uid', isEqualTo: userId)
+          .limit(1)
+          .get();
+      if (venues.docs.isNotEmpty) return 'admin';
+    } catch (_) {
+      // abaikan
+    }
+
+    return 'user';
   }
 
   /// Catat role user di Firestore (dipakai saat registrasi).
+  /// Best-effort: bila gagal (mis. rules belum mengizinkan), diabaikan saja —
+  /// deteksi admin masih punya fallback lewat kepemilikan venue.
   static Future<void> setUserRole(String uid, String role) async {
-    await _db.collection('users').doc(uid).set({
-      'role': role,
-      'created_at': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    try {
+      await _db.collection('users').doc(uid).set({
+        'role': role,
+        'created_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {
+      // diabaikan
+    }
   }
 
   /// Buat venue baru milik admin yang sedang login.
