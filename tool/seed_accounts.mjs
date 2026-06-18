@@ -1,21 +1,80 @@
-// Seed akun demo MabarKeun ke Firebase (Auth + Firestore) via REST API.
+// Seed akun + warnet demo MabarKeun ke Firebase (Auth + Firestore) via REST API.
 //
 // Jalankan: node tool/seed_accounts.mjs
 //
-// Membuat/menyesuaikan:
-//   - gamer@mabarkeun.com / Gamer123  (role user)
-//   - admin@mabarkeun.com / Admin123  (role admin + 1 venue contoh)
+// Membuat:
+//   - 1 akun gamer (user biasa)
+//   - 3 akun admin, masing-masing punya 1 warnet lengkap (foto, jam buka,
+//     fasilitas, lokasi, 15 unit perangkat + spek)
 //
-// Catatan: API key di bawah adalah Web API key publik (sama dengan yang ada di
-// lib/firebase_options.dart), bukan rahasia. Penulisan dokumen `users` bisa
-// ditolak bila security rules untuk koleksi users belum di-deploy — deteksi
-// admin tetap jalan lewat fallback kepemilikan venue.
+// Catatan: API key di bawah = Web API key publik (sama dgn lib/firebase_options.dart),
+// bukan rahasia. Penulisan dokumen `users` (role) & subcollection `computers`
+// hanya berhasil bila security rules sudah di-deploy. Sebelum deploy, langkah
+// itu otomatis di-skip; deteksi admin tetap jalan via kepemilikan venue.
 
 const API_KEY = 'AIzaSyAjpMiJbV5nTTVaQcFTH-70metGeWfh73I';
 const PROJECT = 'mabar-slurd';
 const AUTH = 'https://identitytoolkit.googleapis.com/v1/accounts';
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const H = { 'Content-Type': 'application/json' };
+
+const IMG = {
+  gg: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80',
+  nexus: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80',
+  cyber: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80',
+};
+
+// Daftar admin + warnet dummy.
+const ADMINS = [
+  {
+    email: 'admin@mabarkeun.com', pass: 'Admin123', name: 'Admin GG Arena',
+    venue: {
+      name: 'GG Arena Demo', price: 15, rating: 4.8, badge: 'Populer',
+      lat: -6.200000, lng: 106.816666,
+      address: 'Jl. Sudirman No. 1, Jakarta Pusat',
+      image: IMG.gg, hours: '10:00 - 24:00',
+      facilities: ['AC', 'WiFi', 'Toilet', 'Kantin', 'Parkir'],
+    },
+  },
+  {
+    email: 'admin2@mabarkeun.com', pass: 'Admin123', name: 'Admin Nexus',
+    venue: {
+      name: 'Nexus Esports', price: 20, rating: 4.6, badge: null,
+      lat: -6.214600, lng: 106.845100,
+      address: 'Jl. Gatot Subroto, Jakarta Selatan',
+      image: IMG.nexus, hours: '09:00 - 23:00',
+      facilities: ['AC', 'WiFi', 'Snack', 'Smoking Area'],
+    },
+  },
+  {
+    email: 'admin3@mabarkeun.com', pass: 'Admin123', name: 'Admin CyberShop',
+    venue: {
+      name: 'CyberShop Hub', price: 25, rating: 4.9, badge: 'Baru',
+      lat: -6.175110, lng: 106.865036,
+      address: 'Jl. M.H. Thamrin, Jakarta Pusat',
+      image: IMG.cyber, hours: '24 Jam',
+      facilities: ['AC', 'WiFi', 'Toilet', 'Kantin', 'Parkir', 'Mushola'],
+    },
+  },
+];
+
+const DEFAULT_COMPUTERS = [
+  { code: 'PC-01', spec: 'i3 / GTX 1650', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-02', spec: 'i3 / GTX 1650', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-03', spec: 'i5 / GTX 1660', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-04', spec: 'i5 / GTX 1660', tier: 'Reguler', type: 'PC' },
+  { code: 'PC-05', spec: 'i5 / RTX 3060', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-06', spec: 'i5 / RTX 3060', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-07', spec: 'i7 / RTX 3070', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-08', spec: 'i7 / RTX 3070', tier: 'Gaming', type: 'PC' },
+  { code: 'PC-09', spec: 'i7 / RTX 4070', tier: 'VIP', type: 'PC' },
+  { code: 'PC-10', spec: 'i9 / RTX 4070', tier: 'VIP', type: 'PC' },
+  { code: 'PC-11', spec: 'i9 / RTX 4080', tier: 'VIP', type: 'PC' },
+  { code: 'PC-12', spec: 'i9 / RTX 4090', tier: 'VIP', type: 'PC' },
+  { code: 'PS5-01', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
+  { code: 'PS5-02', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
+  { code: 'PS5-03', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
+];
 
 async function ensureAccount(email, password, displayName) {
   let res = await fetch(`${AUTH}:signUp?key=${API_KEY}`, {
@@ -45,139 +104,90 @@ async function ensureAccount(email, password, displayName) {
 }
 
 async function tryStep(label, fn) {
-  try { const r = await fn(); console.log(`  OK   ${label}${r ? ' -> ' + r : ''}`); }
-  catch (e) { console.log(`  SKIP ${label}: ${e.message}`); }
+  try { const r = await fn(); console.log(`  OK   ${label}${r ? ' -> ' + r : ''}`); return r; }
+  catch (e) { console.log(`  SKIP ${label}: ${e.message}`); return null; }
 }
 
-async function setUserDoc(idToken, uid, role, displayName) {
+function venueFields(ownerUid, v) {
+  const f = {
+    name: { stringValue: v.name },
+    price_per_hour: { integerValue: String(v.price) },
+    rating: { doubleValue: v.rating },
+    distance: { doubleValue: 0 },
+    owner_uid: { stringValue: ownerUid },
+    lat: { doubleValue: v.lat },
+    lng: { doubleValue: v.lng },
+    address: { stringValue: v.address },
+    image_url: { stringValue: v.image },
+    hours: { stringValue: v.hours },
+    facilities: { arrayValue: { values: v.facilities.map((x) => ({ stringValue: x })) } },
+  };
+  if (v.badge) f.badge = { stringValue: v.badge };
+  return f;
+}
+
+async function setUserRole(idToken, uid, role, name) {
   const url = `${FS}/users/${uid}?updateMask.fieldPaths=role&updateMask.fieldPaths=display_name`;
-  const res = await fetch(url, {
-    method: 'PATCH',
+  const res = await fetch(url, { method: 'PATCH',
     headers: { ...H, Authorization: `Bearer ${idToken}` },
-    body: JSON.stringify({ fields: {
-      role: { stringValue: role },
-      display_name: { stringValue: displayName },
-    } }),
-  });
+    body: JSON.stringify({ fields: { role: { stringValue: role }, display_name: { stringValue: name } } }) });
   const d = await res.json();
   if (d.error) throw new Error(d.error.status || d.error.message);
 }
 
 async function myVenues(idToken, ownerUid) {
-  const res = await fetch(`${FS}:runQuery`, {
-    method: 'POST',
+  const res = await fetch(`${FS}:runQuery`, { method: 'POST',
     headers: { ...H, Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ structuredQuery: {
       from: [{ collectionId: 'venues' }],
       where: { fieldFilter: { field: { fieldPath: 'owner_uid' }, op: 'EQUAL', value: { stringValue: ownerUid } } },
-    } }),
-  });
+    } }) });
   const d = await res.json();
   if (d.error) throw new Error(JSON.stringify(d.error));
   return (d || []).filter((x) => x.document).map((x) => ({
-    path: x.document.name,
-    fields: x.document.fields || {},
+    path: x.document.name, fields: x.document.fields || {},
   }));
 }
 
-// Lengkapi venue demo: koordinat (Jakarta), foto, jam buka, fasilitas.
-async function patchVenueDemo(idToken, venuePath) {
-  const masks = ['lat', 'lng', 'address', 'image_url', 'hours', 'facilities']
-    .map((f) => `updateMask.fieldPaths=${f}`)
-    .join('&');
-  const url = `https://firestore.googleapis.com/v1/${venuePath}?${masks}`;
-  const res = await fetch(url, {
-    method: 'PATCH',
+async function createVenue(idToken, ownerUid, v) {
+  const res = await fetch(`${FS}/venues`, { method: 'POST',
     headers: { ...H, Authorization: `Bearer ${idToken}` },
-    body: JSON.stringify({ fields: {
-      lat: { doubleValue: -6.200000 },
-      lng: { doubleValue: 106.816666 },
-      address: { stringValue: 'Jl. Sudirman No. 1, Jakarta Pusat (demo)' },
-      image_url: { stringValue:
-        'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
-      hours: { stringValue: '10:00 - 24:00' },
-      facilities: { arrayValue: { values: [
-        { stringValue: 'AC' },
-        { stringValue: 'WiFi' },
-        { stringValue: 'Toilet' },
-        { stringValue: 'Kantin' },
-        { stringValue: 'Parkir' },
-      ] } },
-    } }),
-  });
+    body: JSON.stringify({ fields: venueFields(ownerUid, v) }) });
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.status || d.error.message);
+  return d.name; // full path
+}
+
+async function patchVenue(idToken, path, ownerUid, v) {
+  const fields = venueFields(ownerUid, v);
+  const masks = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&');
+  const res = await fetch(`https://firestore.googleapis.com/v1/${path}?${masks}`, {
+    method: 'PATCH', headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ fields }) });
   const d = await res.json();
   if (d.error) throw new Error(d.error.status || d.error.message);
 }
 
-async function createVenue(idToken, ownerUid, name, price) {
-  const res = await fetch(`${FS}/venues`, {
-    method: 'POST',
-    headers: { ...H, Authorization: `Bearer ${idToken}` },
-    body: JSON.stringify({ fields: {
-      name: { stringValue: name },
-      price_per_hour: { integerValue: String(price) },
-      rating: { doubleValue: 4.7 },
-      distance: { doubleValue: 1.2 },
-      badge: { stringValue: 'Populer' },
-      owner_uid: { stringValue: ownerUid },
-    } }),
-  });
-  const d = await res.json();
-  if (d.error) throw new Error(d.error.status || d.error.message);
-  return d.name.split('/').pop();
-}
-
-const DEFAULT_COMPUTERS = [
-  { code: 'PC-01', spec: 'i3 / GTX 1650', tier: 'Reguler', type: 'PC' },
-  { code: 'PC-02', spec: 'i3 / GTX 1650', tier: 'Reguler', type: 'PC' },
-  { code: 'PC-03', spec: 'i5 / GTX 1660', tier: 'Reguler', type: 'PC' },
-  { code: 'PC-04', spec: 'i5 / GTX 1660', tier: 'Reguler', type: 'PC' },
-  { code: 'PC-05', spec: 'i5 / RTX 3060', tier: 'Gaming', type: 'PC' },
-  { code: 'PC-06', spec: 'i5 / RTX 3060', tier: 'Gaming', type: 'PC' },
-  { code: 'PC-07', spec: 'i7 / RTX 3070', tier: 'Gaming', type: 'PC' },
-  { code: 'PC-08', spec: 'i7 / RTX 3070', tier: 'Gaming', type: 'PC' },
-  { code: 'PC-09', spec: 'i7 / RTX 4070', tier: 'VIP', type: 'PC' },
-  { code: 'PC-10', spec: 'i9 / RTX 4070', tier: 'VIP', type: 'PC' },
-  { code: 'PC-11', spec: 'i9 / RTX 4080', tier: 'VIP', type: 'PC' },
-  { code: 'PC-12', spec: 'i9 / RTX 4090', tier: 'VIP', type: 'PC' },
-  { code: 'PS5-01', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
-  { code: 'PS5-02', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
-  { code: 'PS5-03', spec: 'PlayStation 5', tier: 'Console', type: 'Console' },
-];
-
-async function computerCount(idToken, venuePath) {
-  const res = await fetch(`https://firestore.googleapis.com/v1/${venuePath}/computers`, {
-    headers: { ...H, Authorization: `Bearer ${idToken}` },
-  });
+async function computerCount(idToken, path) {
+  const res = await fetch(`https://firestore.googleapis.com/v1/${path}/computers`, {
+    headers: { ...H, Authorization: `Bearer ${idToken}` } });
   const d = await res.json();
   if (d.error) throw new Error(d.error.status || d.error.message);
   return (d.documents || []).length;
 }
 
-async function addComputer(idToken, venuePath, c) {
-  const res = await fetch(
-    `https://firestore.googleapis.com/v1/${venuePath}/computers`,
-    {
-      method: 'POST',
-      headers: { ...H, Authorization: `Bearer ${idToken}` },
-      body: JSON.stringify({ fields: {
-        code: { stringValue: c.code },
-        name: { stringValue: c.code },
-        spec: { stringValue: c.spec },
-        tier: { stringValue: c.tier },
-        type: { stringValue: c.type },
-      } }),
-    },
-  );
-  const d = await res.json();
-  if (d.error) throw new Error(d.error.status || d.error.message);
-}
-
-async function seedComputers(idToken, venuePath) {
-  const n = await computerCount(idToken, venuePath);
-  if (n > 0) return `sudah ada ${n} unit, skip`;
+async function seedComputers(idToken, path) {
+  const n = await computerCount(idToken, path);
+  if (n > 0) return `sudah ${n} unit, skip`;
   for (const c of DEFAULT_COMPUTERS) {
-    await addComputer(idToken, venuePath, c);
+    const res = await fetch(`https://firestore.googleapis.com/v1/${path}/computers`, {
+      method: 'POST', headers: { ...H, Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({ fields: {
+        code: { stringValue: c.code }, name: { stringValue: c.code },
+        spec: { stringValue: c.spec }, tier: { stringValue: c.tier }, type: { stringValue: c.type },
+      } }) });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error.status || d.error.message);
   }
   return `${DEFAULT_COMPUTERS.length} unit ditambahkan`;
 }
@@ -185,35 +195,28 @@ async function seedComputers(idToken, venuePath) {
 (async () => {
   console.log('GAMER (gamer@mabarkeun.com / Gamer123)');
   const gamer = await ensureAccount('gamer@mabarkeun.com', 'Gamer123', 'Gamer Demo');
-  console.log(`  auth OK uid=${gamer.uid} new=${gamer.isNew}`);
-  await tryStep('set role=user', () => setUserDoc(gamer.idToken, gamer.uid, 'user', 'Gamer Demo'));
+  console.log(`  auth OK uid=${gamer.uid}`);
+  await tryStep('set role=user', () => setUserRole(gamer.idToken, gamer.uid, 'user', 'Gamer Demo'));
 
-  console.log('ADMIN (admin@mabarkeun.com / Admin123)');
-  const admin = await ensureAccount('admin@mabarkeun.com', 'Admin123', 'Admin Warnet');
-  console.log(`  auth OK uid=${admin.uid} new=${admin.isNew}`);
-  await tryStep('set role=admin', () => setUserDoc(admin.idToken, admin.uid, 'admin', 'Admin Warnet'));
+  for (const a of ADMINS) {
+    console.log(`\nADMIN ${a.email} / ${a.pass}  ->  ${a.venue.name}`);
+    const adm = await ensureAccount(a.email, a.pass, a.name);
+    console.log(`  auth OK uid=${adm.uid}`);
+    await tryStep('set role=admin', () => setUserRole(adm.idToken, adm.uid, 'admin', a.name));
 
-  let venues = [];
-  await tryStep('cek venue admin', async () => {
-    venues = await myVenues(admin.idToken, admin.uid);
-    return `${venues.length} venue`;
-  });
-  if (venues.length === 0) {
-    await tryStep('buat venue GG Arena Demo',
-        () => createVenue(admin.idToken, admin.uid, 'GG Arena Demo', 15));
-    await tryStep('muat ulang venue', async () => {
-      venues = await myVenues(admin.idToken, admin.uid);
-      return `${venues.length} venue`;
-    });
+    // Cari venue milik admin ini dengan nama yang cocok; patch atau buat baru.
+    let venues = await myVenues(adm.idToken, adm.uid);
+    let target = venues.find((x) => x.fields?.name?.stringValue === a.venue.name);
+    if (target) {
+      await tryStep('perbarui data warnet', () => patchVenue(adm.idToken, target.path, adm.uid, a.venue));
+    } else {
+      const path = await tryStep('buat warnet', () => createVenue(adm.idToken, adm.uid, a.venue));
+      if (path) target = { path };
+    }
+    if (target) {
+      await tryStep('seed 15 perangkat + spek', () => seedComputers(adm.idToken, target.path));
+    }
   }
 
-  // Lengkapi venue demo: lokasi, foto, jam buka, fasilitas.
-  if (venues.length > 0) {
-    await tryStep('lengkapi venue demo (lokasi/foto/jam/fasilitas)',
-        () => patchVenueDemo(admin.idToken, venues[0].path));
-    await tryStep('seed perangkat venue demo (15 unit + spek)',
-        () => seedComputers(admin.idToken, venues[0].path));
-  }
-
-  console.log('\nSelesai. Login pakai akun di atas.');
+  console.log('\nSelesai. Lihat README untuk daftar akun.');
 })().catch((e) => { console.error('FATAL:', e.message); process.exit(1); });
