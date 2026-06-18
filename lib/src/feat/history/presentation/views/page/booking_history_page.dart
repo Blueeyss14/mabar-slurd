@@ -172,6 +172,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           total: (item['total_price'] as num).toInt(),
           status: statusLabel,
           durationHours: (item['duration_hours'] as num?)?.toInt() ?? 1,
+          data: item,
         ),
       ),
     );

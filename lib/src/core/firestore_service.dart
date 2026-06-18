@@ -89,6 +89,7 @@ class FirestoreService {
     required String deviceType,
     required int totalPrice,
     required String computerId,
+    String paymentMethod = 'Bayar di Tempat',
   }) async {
     // Pastikan komputer yang dipilih belum dibooking di rentang waktu ini.
     final booked = await getBookedComputers(venueId, startTime, endTime);
@@ -106,11 +107,52 @@ class FirestoreService {
       'device_type': deviceType,
       'computer_id': computerId,
       'total_price': totalPrice,
+      'payment_method': paymentMethod,
       'status': 'active',
       'created_at': FieldValue.serverTimestamp(),
     });
 
     return true;
+  }
+
+  /// Ubah jadwal booking (reschedule). Cek bentrok komputer di waktu baru,
+  /// kecualikan booking ini sendiri. Hanya pemilik booking (dijaga rules).
+  static Future<bool> rescheduleBooking({
+    required String bookingId,
+    required String venueId,
+    required String computerId,
+    required DateTime startTime,
+    required DateTime endTime,
+    required int durationHours,
+    required int totalPrice,
+  }) async {
+    try {
+      final snapshot = await _db
+          .collection('bookings')
+          .where('venue_id', isEqualTo: venueId)
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      final bentrok = snapshot.docs.any((doc) {
+        if (doc.id == bookingId) return false; // abaikan diri sendiri
+        final data = doc.data();
+        if (data['computer_id'] != computerId) return false;
+        final s = (data['start_time'] as Timestamp).toDate();
+        final e = (data['end_time'] as Timestamp).toDate();
+        return s.isBefore(endTime) && e.isAfter(startTime);
+      });
+      if (bentrok) return false;
+
+      await _db.collection('bookings').doc(bookingId).update({
+        'start_time': Timestamp.fromDate(startTime),
+        'end_time': Timestamp.fromDate(endTime),
+        'duration_hours': durationHours,
+        'total_price': totalPrice,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Ambil riwayat booking milik user yang sedang login,
