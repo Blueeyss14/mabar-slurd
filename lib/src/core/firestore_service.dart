@@ -267,6 +267,9 @@ class FirestoreService {
     double rating = 0,
     double distance = 0,
     String? badge,
+    double? lat,
+    double? lng,
+    String? address,
   }) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return null;
@@ -278,6 +281,10 @@ class FirestoreService {
         'distance': distance,
         'badge': (badge != null && badge.trim().isNotEmpty) ? badge.trim() : null,
         'owner_uid': uid,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+        if (address != null && address.trim().isNotEmpty)
+          'address': address.trim(),
         'created_at': FieldValue.serverTimestamp(),
       });
       return ref.id;
@@ -445,12 +452,19 @@ class FirestoreService {
     required String name,
     required int pricePerHour,
     String? badge,
+    double? lat,
+    double? lng,
+    String? address,
   }) async {
     try {
       await _db.collection('venues').doc(venueId).update({
         'name': name.trim(),
         'price_per_hour': pricePerHour,
         'badge': (badge != null && badge.trim().isNotEmpty) ? badge.trim() : null,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+        if (address != null && address.trim().isNotEmpty)
+          'address': address.trim(),
       });
       return true;
     } catch (_) {

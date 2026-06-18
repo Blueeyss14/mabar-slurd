@@ -63,7 +63,7 @@ async function setUserDoc(idToken, uid, role, displayName) {
   if (d.error) throw new Error(d.error.status || d.error.message);
 }
 
-async function venueCount(idToken, ownerUid) {
+async function myVenues(idToken, ownerUid) {
   const res = await fetch(`${FS}:runQuery`, {
     method: 'POST',
     headers: { ...H, Authorization: `Bearer ${idToken}` },
@@ -74,7 +74,27 @@ async function venueCount(idToken, ownerUid) {
   });
   const d = await res.json();
   if (d.error) throw new Error(JSON.stringify(d.error));
-  return (d || []).filter((x) => x.document).length;
+  return (d || []).filter((x) => x.document).map((x) => ({
+    path: x.document.name,
+    fields: x.document.fields || {},
+  }));
+}
+
+// Koordinat demo (Jakarta) supaya venue muncul di peta.
+async function patchVenueLocation(idToken, venuePath) {
+  const url = `https://firestore.googleapis.com/v1/${venuePath}` +
+    `?updateMask.fieldPaths=lat&updateMask.fieldPaths=lng&updateMask.fieldPaths=address`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ fields: {
+      lat: { doubleValue: -6.200000 },
+      lng: { doubleValue: 106.816666 },
+      address: { stringValue: 'Jakarta Pusat (demo)' },
+    } }),
+  });
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.status || d.error.message);
 }
 
 async function createVenue(idToken, ownerUid, name, price) {
@@ -106,12 +126,26 @@ async function createVenue(idToken, ownerUid, name, price) {
   console.log(`  auth OK uid=${admin.uid} new=${admin.isNew}`);
   await tryStep('set role=admin', () => setUserDoc(admin.idToken, admin.uid, 'admin', 'Admin Warnet'));
 
-  let n = 0;
-  await tryStep('cek venue admin', async () => { n = await venueCount(admin.idToken, admin.uid); return `${n} venue`; });
-  if (n === 0) {
-    await tryStep('buat venue GG Arena Demo', () => createVenue(admin.idToken, admin.uid, 'GG Arena Demo', 15));
-  } else {
-    console.log('  SKIP buat venue (sudah ada)');
+  let venues = [];
+  await tryStep('cek venue admin', async () => {
+    venues = await myVenues(admin.idToken, admin.uid);
+    return `${venues.length} venue`;
+  });
+  if (venues.length === 0) {
+    await tryStep('buat venue GG Arena Demo',
+        () => createVenue(admin.idToken, admin.uid, 'GG Arena Demo', 15));
+    await tryStep('muat ulang venue', async () => {
+      venues = await myVenues(admin.idToken, admin.uid);
+      return `${venues.length} venue`;
+    });
+  }
+
+  // Pastikan venue pertama punya koordinat agar muncul di peta.
+  if (venues.length > 0 && !venues[0].fields.lat) {
+    await tryStep('set lokasi venue (Jakarta demo)',
+        () => patchVenueLocation(admin.idToken, venues[0].path));
+  } else if (venues.length > 0) {
+    console.log('  SKIP set lokasi (sudah ada)');
   }
 
   console.log('\nSelesai. Login pakai akun di atas.');
