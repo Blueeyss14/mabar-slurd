@@ -12,11 +12,11 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
   int _selected = 0;
 
   static const List<Map<String, dynamic>> _methods = [
-    {'icon': Icons.account_balance_wallet, 'name': 'GoPay', 'info': 'Saldo Rp 150.000'},
-    {'icon': Icons.account_balance_wallet_outlined, 'name': 'OVO', 'info': 'Saldo Rp 75.000'},
+    {'icon': Icons.payments_outlined, 'name': 'Bayar di Tempat', 'info': 'Tunai saat datang ke warnet'},
+    {'icon': Icons.account_balance_wallet, 'name': 'GoPay', 'info': 'E-wallet'},
+    {'icon': Icons.account_balance_wallet_outlined, 'name': 'OVO', 'info': 'E-wallet'},
     {'icon': Icons.qr_code, 'name': 'QRIS', 'info': 'Scan untuk bayar'},
-    {'icon': Icons.credit_card, 'name': 'Kartu Kredit/Debit', 'info': '**** 4521'},
-    {'icon': Icons.payments_outlined, 'name': 'Bayar di Tempat', 'info': 'Tunai saat datang'},
+    {'icon': Icons.credit_card, 'name': 'Kartu Kredit/Debit', 'info': 'Visa / Mastercard'},
   ];
 
   @override
@@ -42,7 +42,35 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: ListView.separated(
+      body: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: CustomColors.mabarBorderFocus.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline,
+                    size: 18, color: CustomColors.mabarBorderFocus),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Pilih metode favoritmu. Metode pembayaran final dipilih '
+                    'saat checkout booking.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: CustomColors.mabarTextSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: _methods.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -113,6 +141,9 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
             ),
           );
         },
+            ),
+          ),
+        ],
       ),
     );
   }

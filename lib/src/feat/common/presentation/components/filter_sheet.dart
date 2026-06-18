@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class FilterSheet extends StatefulWidget {
-  const FilterSheet({super.key});
+  final String initialSort;
+  final double initialMaxPrice;
+
+  const FilterSheet({
+    super.key,
+    this.initialSort = 'Semua',
+    this.initialMaxPrice = 100,
+  });
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();
 }
 
 class _FilterSheetState extends State<FilterSheet> {
-  final List<String> _devices = ['Semua', 'PC Gaming', 'Console', 'VR'];
-  String _selectedDevice = 'Semua';
+  final List<String> _sorts = ['Semua', 'Terdekat', 'Termurah', 'Rating', 'Populer'];
+  late String _selectedSort = widget.initialSort;
 
-  final List<String> _sorts = ['Terdekat', 'Termurah', 'Rating', 'Populer'];
-  String _selectedSort = 'Terdekat';
-
-  double _maxPrice = 50;
+  late double _maxPrice = widget.initialMaxPrice;
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +57,8 @@ class _FilterSheetState extends State<FilterSheet> {
               ),
               GestureDetector(
                 onTap: () => setState(() {
-                  _selectedDevice = 'Semua';
-                  _selectedSort = 'Terdekat';
-                  _maxPrice = 50;
+                  _selectedSort = 'Semua';
+                  _maxPrice = 100;
                 }),
                 child: const Text(
                   "Atur Ulang",
@@ -67,14 +70,6 @@ class _FilterSheetState extends State<FilterSheet> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 24),
-          _buildSectionTitle("Jenis Perangkat"),
-          const SizedBox(height: 12),
-          _buildChips(
-            options: _devices,
-            selected: _selectedDevice,
-            onSelect: (v) => setState(() => _selectedDevice = v),
           ),
           const SizedBox(height: 24),
           _buildSectionTitle("Urutkan"),
@@ -120,7 +115,10 @@ class _FilterSheetState extends State<FilterSheet> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context, {
+                'sort': _selectedSort,
+                'maxPrice': _maxPrice,
+              }),
               child: const Text(
                 "Terapkan Filter",
                 style: TextStyle(
