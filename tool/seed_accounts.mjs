@@ -80,17 +80,29 @@ async function myVenues(idToken, ownerUid) {
   }));
 }
 
-// Koordinat demo (Jakarta) supaya venue muncul di peta.
-async function patchVenueLocation(idToken, venuePath) {
-  const url = `https://firestore.googleapis.com/v1/${venuePath}` +
-    `?updateMask.fieldPaths=lat&updateMask.fieldPaths=lng&updateMask.fieldPaths=address`;
+// Lengkapi venue demo: koordinat (Jakarta), foto, jam buka, fasilitas.
+async function patchVenueDemo(idToken, venuePath) {
+  const masks = ['lat', 'lng', 'address', 'image_url', 'hours', 'facilities']
+    .map((f) => `updateMask.fieldPaths=${f}`)
+    .join('&');
+  const url = `https://firestore.googleapis.com/v1/${venuePath}?${masks}`;
   const res = await fetch(url, {
     method: 'PATCH',
     headers: { ...H, Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ fields: {
       lat: { doubleValue: -6.200000 },
       lng: { doubleValue: 106.816666 },
-      address: { stringValue: 'Jakarta Pusat (demo)' },
+      address: { stringValue: 'Jl. Sudirman No. 1, Jakarta Pusat (demo)' },
+      image_url: { stringValue:
+        'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+      hours: { stringValue: '10:00 - 24:00' },
+      facilities: { arrayValue: { values: [
+        { stringValue: 'AC' },
+        { stringValue: 'WiFi' },
+        { stringValue: 'Toilet' },
+        { stringValue: 'Kantin' },
+        { stringValue: 'Parkir' },
+      ] } },
     } }),
   });
   const d = await res.json();
@@ -140,12 +152,10 @@ async function createVenue(idToken, ownerUid, name, price) {
     });
   }
 
-  // Pastikan venue pertama punya koordinat agar muncul di peta.
-  if (venues.length > 0 && !venues[0].fields.lat) {
-    await tryStep('set lokasi venue (Jakarta demo)',
-        () => patchVenueLocation(admin.idToken, venues[0].path));
-  } else if (venues.length > 0) {
-    console.log('  SKIP set lokasi (sudah ada)');
+  // Lengkapi venue demo: lokasi, foto, jam buka, fasilitas.
+  if (venues.length > 0) {
+    await tryStep('lengkapi venue demo (lokasi/foto/jam/fasilitas)',
+        () => patchVenueDemo(admin.idToken, venues[0].path));
   }
 
   console.log('\nSelesai. Login pakai akun di atas.');

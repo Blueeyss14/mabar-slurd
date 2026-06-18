@@ -169,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             distance: (place['distance'] as num?)?.toDouble() ?? 0,
                             price: (place['price_per_hour'] as num?)?.toInt() ?? 0,
                             badge: place['badge'] as String?,
+                            imageUrl: place['image_url'] as String?,
                             onTap: () {
                               Navigator.push(
                                 context,

@@ -270,6 +270,9 @@ class FirestoreService {
     double? lat,
     double? lng,
     String? address,
+    String? imageUrl,
+    String? hours,
+    List<String>? facilities,
   }) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return null;
@@ -285,6 +288,10 @@ class FirestoreService {
         if (lng != null) 'lng': lng,
         if (address != null && address.trim().isNotEmpty)
           'address': address.trim(),
+        if (imageUrl != null && imageUrl.trim().isNotEmpty)
+          'image_url': imageUrl.trim(),
+        if (hours != null && hours.trim().isNotEmpty) 'hours': hours.trim(),
+        if (facilities != null) 'facilities': facilities,
         'created_at': FieldValue.serverTimestamp(),
       });
       return ref.id;
@@ -455,6 +462,9 @@ class FirestoreService {
     double? lat,
     double? lng,
     String? address,
+    String? imageUrl,
+    String? hours,
+    List<String>? facilities,
   }) async {
     try {
       await _db.collection('venues').doc(venueId).update({
@@ -465,6 +475,9 @@ class FirestoreService {
         if (lng != null) 'lng': lng,
         if (address != null && address.trim().isNotEmpty)
           'address': address.trim(),
+        if (imageUrl != null) 'image_url': imageUrl.trim(),
+        if (hours != null) 'hours': hours.trim(),
+        if (facilities != null) 'facilities': facilities,
       });
       return true;
     } catch (_) {

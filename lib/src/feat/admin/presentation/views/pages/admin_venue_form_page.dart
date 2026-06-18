@@ -20,12 +20,26 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _badgeController = TextEditingController();
+  final _imageController = TextEditingController();
+  final _hoursController = TextEditingController();
   bool _isLoading = false;
 
   double? _lat;
   double? _lng;
   String? _address;
   bool _loadingLoc = false;
+
+  final Set<String> _facilities = {};
+  static const _facilityOptions = [
+    'AC',
+    'WiFi',
+    'Toilet',
+    'Kantin',
+    'Parkir',
+    'Mushola',
+    'Smoking Area',
+    'Snack',
+  ];
 
   bool get _isEdit => widget.venue != null;
 
@@ -38,9 +52,15 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
       _priceController.text =
           ((v['price_per_hour'] as num?)?.toInt() ?? 0).toString();
       _badgeController.text = v['badge'] as String? ?? '';
+      _imageController.text = v['image_url'] as String? ?? '';
+      _hoursController.text = v['hours'] as String? ?? '';
       _lat = (v['lat'] as num?)?.toDouble();
       _lng = (v['lng'] as num?)?.toDouble();
       _address = v['address'] as String?;
+      final fac = v['facilities'];
+      if (fac is List) {
+        _facilities.addAll(fac.map((e) => e.toString()));
+      }
     }
   }
 
@@ -96,6 +116,8 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
     _nameController.dispose();
     _priceController.dispose();
     _badgeController.dispose();
+    _imageController.dispose();
+    _hoursController.dispose();
     super.dispose();
   }
 
@@ -125,6 +147,9 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
         lat: _lat,
         lng: _lng,
         address: _address,
+        imageUrl: _imageController.text,
+        hours: _hoursController.text,
+        facilities: _facilities.toList(),
       );
     } else {
       final id = await FirestoreService.createVenue(
@@ -134,6 +159,9 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
         lat: _lat,
         lng: _lng,
         address: _address,
+        imageUrl: _imageController.text,
+        hours: _hoursController.text,
+        facilities: _facilities.toList(),
       );
       ok = id != null;
     }
@@ -221,6 +249,24 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
               iconData: Icons.local_offer_outlined,
             ),
             const SizedBox(height: 20),
+            _label('FOTO WARNET (URL)'),
+            MabarTextField(
+              controller: _imageController,
+              hintText: 'https://...jpg',
+              iconData: Icons.image_outlined,
+            ),
+            _buildImagePreview(),
+            const SizedBox(height: 20),
+            _label('JAM BUKA'),
+            MabarTextField(
+              controller: _hoursController,
+              hintText: '10:00 - 24:00',
+              iconData: Icons.access_time,
+            ),
+            const SizedBox(height: 20),
+            _label('FASILITAS'),
+            _buildFacilityChips(),
+            const SizedBox(height: 20),
             _label('LOKASI WARNET'),
             _buildLocationBox(),
             const SizedBox(height: 36),
@@ -258,6 +304,89 @@ class _AdminVenueFormPageState extends State<AdminVenueFormPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    final url = _imageController.text.trim();
+    if (url.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          url,
+          height: 120,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            height: 120,
+            alignment: Alignment.center,
+            color: CustomColors.mabarSurfaceInput,
+            child: const Text(
+              'URL gambar tidak valid',
+              style: TextStyle(color: CustomColors.mabarTextTertiary),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFacilityChips() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _facilityOptions.map((f) {
+        final selected = _facilities.contains(f);
+        return GestureDetector(
+          onTap: () => setState(() {
+            if (selected) {
+              _facilities.remove(f);
+            } else {
+              _facilities.add(f);
+            }
+          }),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: selected
+                  ? CustomColors.mabarBorderFocus
+                  : CustomColors.mabarSurfaceInput,
+              border: Border.all(
+                color: selected
+                    ? CustomColors.mabarBorderFocus
+                    : CustomColors.mabarBorderSubtle,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  selected ? Icons.check : Icons.add,
+                  size: 14,
+                  color: selected
+                      ? Colors.white
+                      : CustomColors.mabarTextSecondary,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  f,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight:
+                        selected ? FontWeight.bold : FontWeight.normal,
+                    color: selected
+                        ? Colors.white
+                        : CustomColors.mabarTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
