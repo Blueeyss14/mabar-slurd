@@ -36,6 +36,15 @@ class _BookingPageState extends State<BookingPage> {
   List<Map<String, dynamic>> _computers = [];
   bool _loadingComputers = true;
 
+  String _paymentMethod = 'Bayar di Tempat';
+  static const List<Map<String, dynamic>> _paymentMethods = [
+    {'name': 'Bayar di Tempat', 'icon': Icons.payments_outlined},
+    {'name': 'GoPay', 'icon': Icons.account_balance_wallet},
+    {'name': 'OVO', 'icon': Icons.account_balance_wallet_outlined},
+    {'name': 'QRIS', 'icon': Icons.qr_code},
+    {'name': 'Kartu', 'icon': Icons.credit_card},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -187,6 +196,7 @@ class _BookingPageState extends State<BookingPage> {
         deviceType: komputer['tier'] as String,
         computerId: komputer['id'] as String,
         totalPrice: _totalPrice,
+        paymentMethod: _paymentMethod,
       ).timeout(const Duration(seconds: 10));
     } catch (e) {
       if (mounted) _showError('Terjadi kesalahan: $e');
@@ -404,6 +414,13 @@ class _BookingPageState extends State<BookingPage> {
                           : null),
                   const SizedBox(height: 12),
                   _buildKomputerSection(),
+                  const SizedBox(height: 28),
+
+                  _buildSectionLabel('Metode Pembayaran',
+                      icon: Icons.account_balance_wallet_outlined,
+                      chip: _paymentMethod),
+                  const SizedBox(height: 10),
+                  _buildPaymentPicker(),
                   const SizedBox(height: 28),
 
                   _buildSectionLabel('Ringkasan',
@@ -658,6 +675,63 @@ class _BookingPageState extends State<BookingPage> {
           ),
         ),
       ],
+    );
+  }
+
+  // ── Metode Pembayaran ─────────────────────────────────────────────────────
+
+  Widget _buildPaymentPicker() {
+    return SizedBox(
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _paymentMethods.length,
+        itemBuilder: (context, i) {
+          final m = _paymentMethods[i];
+          final name = m['name'] as String;
+          final isSelected = _paymentMethod == name;
+          return GestureDetector(
+            onTap: () => setState(() => _paymentMethod = name),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: isSelected
+                    ? CustomColors.mabarBorderFocus
+                    : CustomColors.mabarSurfaceCard,
+                border: Border.all(
+                  color: isSelected
+                      ? CustomColors.mabarBorderFocus
+                      : CustomColors.mabarBorderSubtle,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(m['icon'] as IconData,
+                      size: 16,
+                      color: isSelected
+                          ? Colors.white
+                          : CustomColors.mabarTextSecondary),
+                  const SizedBox(width: 7),
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? Colors.white
+                          : CustomColors.mabarTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -988,6 +1062,12 @@ class _BookingPageState extends State<BookingPage> {
             Icons.payments_outlined,
             'Harga / Jam',
             'Rp ${Formatters.rupiah(_pricePerHour * 1000)}',
+          ),
+          _summaryDivider(),
+          _summaryRow(
+            Icons.account_balance_wallet_outlined,
+            'Pembayaran',
+            _paymentMethod,
           ),
           const SizedBox(height: 14),
           Container(

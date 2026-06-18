@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
+import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
 
 class BookingHistoryDetailPage extends StatelessWidget {
   final String bookingId;
@@ -12,6 +13,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
   final int total;
   final String status;
   final int durationHours;
+  final Map<String, dynamic> data;
 
   const BookingHistoryDetailPage({
     super.key,
@@ -23,6 +25,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
     required this.total,
     required this.status,
     required this.durationHours,
+    this.data = const {},
   });
 
   ({Color color, IconData icon}) get _statusStyle {
@@ -83,6 +86,8 @@ class BookingHistoryDetailPage extends StatelessWidget {
             _buildPaymentCard(harga, biayaLayanan, totalBayar),
             if (status == 'Berlangsung') ...[
               const SizedBox(height: 16),
+              _buildRescheduleButton(context),
+              const SizedBox(height: 12),
               _buildCancelButton(context),
             ],
             const SizedBox(height: 30),
@@ -211,6 +216,9 @@ class BookingHistoryDetailPage extends StatelessWidget {
       ),
       child: Column(
         children: [
+          _buildPaymentRow(
+              "Metode", data['payment_method'] as String? ?? 'Bayar di Tempat'),
+          const SizedBox(height: 12),
           _buildPaymentRow("Harga Sewa", "Rp ${Formatters.rupiah(harga)}"),
           const SizedBox(height: 12),
           _buildPaymentRow(
@@ -244,6 +252,248 @@ class BookingHistoryDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildRescheduleButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: CustomColors.mabarBorderFocus),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        onPressed: () => _openReschedule(context),
+        icon: const Icon(Icons.edit_calendar_outlined,
+            color: CustomColors.mabarBorderFocus),
+        label: const Text(
+          "Ubah Jadwal",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: CustomColors.mabarBorderFocus,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openReschedule(BuildContext context) {
+    final venueId = data['venue_id'] as String?;
+    final computerId = data['computer_id'] as String?;
+    if (venueId == null || computerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data booking tidak lengkap.')),
+      );
+      return;
+    }
+
+    DateTime? newDate;
+    int? newHour;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (sheetCtx, setSheet) => Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              decoration: const BoxDecoration(
+                color: CustomColors.mabarSurface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: CustomColors.mabarBorderSubtle,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Ubah Jadwal',
+                      style: TextStyle(
+                          color: CustomColors.mabarTextPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Durasi $durationHours jam · $subTitle (tetap)',
+                    style: const TextStyle(
+                        color: CustomColors.mabarTextSecondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  // Pilih tanggal
+                  GestureDetector(
+                    onTap: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: sheetCtx,
+                        initialDate: now,
+                        firstDate: now,
+                        lastDate: now.add(const Duration(days: 30)),
+                      );
+                      if (picked != null) setSheet(() => newDate = picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: CustomColors.mabarSurfaceInput,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month,
+                              size: 18, color: CustomColors.mabarBorderFocus),
+                          const SizedBox(width: 10),
+                          Text(
+                            newDate != null
+                                ? Formatters.tanggal(newDate!)
+                                : 'Pilih tanggal baru',
+                            style: TextStyle(
+                              color: newDate != null
+                                  ? CustomColors.mabarTextPrimary
+                                  : CustomColors.mabarTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('Jam mulai baru',
+                      style: TextStyle(
+                          color: CustomColors.mabarTextSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: List.generate(pilihJam.length, (i) {
+                      final jam = pilihJam[i]['jam'] as String;
+                      final hour = int.parse(jam.split(':')[0]);
+                      final sel = newHour == hour;
+                      return GestureDetector(
+                        onTap: () => setSheet(() => newHour = hour),
+                        child: Container(
+                          width: 52,
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: sel
+                                ? CustomColors.mabarBorderFocus
+                                : CustomColors.mabarSurfaceCard,
+                            border: Border.all(
+                              color: sel
+                                  ? CustomColors.mabarBorderFocus
+                                  : CustomColors.mabarBorderSubtle,
+                            ),
+                          ),
+                          child: Text(jam,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: CustomColors.mabarTextPrimary,
+                                  fontWeight: sel
+                                      ? FontWeight.bold
+                                      : FontWeight.normal)),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CustomColors.mabarBorderFocus,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () =>
+                          _submitReschedule(context, sheetCtx, venueId,
+                              computerId, newDate, newHour),
+                      child: const Text('Simpan Jadwal Baru',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _submitReschedule(
+    BuildContext pageCtx,
+    BuildContext sheetCtx,
+    String venueId,
+    String computerId,
+    DateTime? newDate,
+    int? newHour,
+  ) async {
+    final messenger = ScaffoldMessenger.of(pageCtx);
+    if (newDate == null || newHour == null) {
+      ScaffoldMessenger.of(sheetCtx).showSnackBar(
+        const SnackBar(content: Text('Pilih tanggal & jam dulu.')),
+      );
+      return;
+    }
+    final start =
+        DateTime(newDate.year, newDate.month, newDate.day, newHour);
+    if (start.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(sheetCtx).showSnackBar(
+        const SnackBar(content: Text('Tidak bisa pilih waktu yang sudah lewat.')),
+      );
+      return;
+    }
+    final end = start.add(Duration(hours: durationHours));
+    final navigator = Navigator.of(pageCtx);
+    Navigator.pop(sheetCtx);
+
+    final ok = await FirestoreService.rescheduleBooking(
+      bookingId: bookingId,
+      venueId: venueId,
+      computerId: computerId,
+      startTime: start,
+      endTime: end,
+      durationHours: durationHours,
+      totalPrice: total,
+    );
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Jadwal berhasil diubah.'
+              : 'Gagal: perangkat sudah dibooking di waktu itu.',
+          style: const TextStyle(
+              color: CustomColors.mabarTextPrimary,
+              fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: ok ? CustomColors.mabarPurpleBg : Colors.red.shade800,
+      ),
+    );
+    if (ok) navigator.pop();
   }
 
   Widget _buildCancelButton(BuildContext context) {
