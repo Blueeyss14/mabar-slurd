@@ -417,10 +417,9 @@ class _BookingPageState extends State<BookingPage> {
                   const SizedBox(height: 28),
 
                   _buildSectionLabel('Metode Pembayaran',
-                      icon: Icons.account_balance_wallet_outlined,
-                      chip: _paymentMethod),
+                      icon: Icons.account_balance_wallet_outlined),
                   const SizedBox(height: 10),
-                  _buildPaymentPicker(),
+                  _buildPaymentTile(),
                   const SizedBox(height: 28),
 
                   _buildSectionLabel('Ringkasan',
@@ -680,58 +679,148 @@ class _BookingPageState extends State<BookingPage> {
 
   // ── Metode Pembayaran ─────────────────────────────────────────────────────
 
-  Widget _buildPaymentPicker() {
-    return SizedBox(
-      height: 44,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _paymentMethods.length,
-        itemBuilder: (context, i) {
-          final m = _paymentMethods[i];
-          final name = m['name'] as String;
-          final isSelected = _paymentMethod == name;
-          return GestureDetector(
-            onTap: () => setState(() => _paymentMethod = name),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+  Widget _buildPaymentTile() {
+    final selected = _paymentMethods.firstWhere(
+      (m) => m['name'] == _paymentMethod,
+      orElse: () => _paymentMethods.first,
+    );
+    return GestureDetector(
+      onTap: _showPaymentPopup,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: CustomColors.mabarSurfaceCard,
+          border: Border.all(color: CustomColors.mabarBorderSubtle),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: isSelected
-                    ? CustomColors.mabarBorderFocus
-                    : CustomColors.mabarSurfaceCard,
-                border: Border.all(
-                  color: isSelected
-                      ? CustomColors.mabarBorderFocus
-                      : CustomColors.mabarBorderSubtle,
+                color: CustomColors.mabarBorderFocus.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(selected['icon'] as IconData,
+                  size: 18, color: CustomColors.mabarBorderFocus),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _paymentMethod,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: CustomColors.mabarTextPrimary,
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(m['icon'] as IconData,
-                      size: 16,
-                      color: isSelected
-                          ? Colors.white
-                          : CustomColors.mabarTextSecondary),
-                  const SizedBox(width: 7),
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected
-                          ? Colors.white
-                          : CustomColors.mabarTextSecondary,
-                    ),
-                  ),
-                ],
+            ),
+            const Text(
+              'Ubah',
+              style: TextStyle(
+                fontSize: 13,
+                color: CustomColors.mabarBorderFocus,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          );
-        },
+            const Icon(Icons.chevron_right,
+                color: CustomColors.mabarTextSecondary, size: 20),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showPaymentPopup() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+          decoration: const BoxDecoration(
+            color: CustomColors.mabarSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: CustomColors.mabarBorderSubtle,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Pilih Metode Pembayaran',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: CustomColors.mabarTextPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ..._paymentMethods.map((m) {
+                final name = m['name'] as String;
+                final isSelected = _paymentMethod == name;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _paymentMethod = name);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: isSelected
+                          ? CustomColors.mabarBorderFocus.withValues(alpha: 0.12)
+                          : CustomColors.mabarSurfaceCard,
+                      border: Border.all(
+                        color: isSelected
+                            ? CustomColors.mabarBorderFocus
+                            : CustomColors.mabarBorderSubtle,
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(m['icon'] as IconData,
+                            size: 20,
+                            color: isSelected
+                                ? CustomColors.mabarBorderFocus
+                                : CustomColors.mabarTextSecondary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: CustomColors.mabarTextPrimary,
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle,
+                              color: CustomColors.mabarBorderFocus, size: 20),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 

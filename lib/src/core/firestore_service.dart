@@ -606,23 +606,41 @@ class FirestoreService {
             snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
   }
 
-  /// Simpan profil user: displayName ke FirebaseAuth, nomor telepon ke Firestore.
+  /// Simpan profil user: displayName + foto ke FirebaseAuth, telepon & foto ke Firestore.
   static Future<bool> updateUserProfile({
     required String displayName,
     required String phone,
+    String? photoUrl,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
     try {
       await user.updateDisplayName(displayName.trim());
+      if (photoUrl != null) await user.updatePhotoURL(photoUrl);
       await _db.collection('users').doc(user.uid).set({
         'display_name': displayName.trim(),
         'phone': phone.trim(),
+        if (photoUrl != null) 'photo_url': photoUrl,
         'updated_at': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Ubah email akun. Memerlukan login yang masih segar; jika gagal karena
+  /// 'requires-recent-login', kembalikan kode itu agar UI bisa minta re-login.
+  static Future<String> updateEmail(String newEmail) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 'no-user';
+    try {
+      await user.verifyBeforeUpdateEmail(newEmail.trim());
+      return 'verify-sent';
+    } on FirebaseAuthException catch (e) {
+      return e.code;
+    } catch (_) {
+      return 'error';
     }
   }
 }
