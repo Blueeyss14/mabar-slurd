@@ -321,6 +321,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         onPressed: () {
+                          if (usernameController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Nama pengguna tidak boleh kosong.'),
+                              ),
+                            );
+                            return;
+                          }
+                          if (!_isAgreed) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Setujui Syarat & Ketentuan dulu ya.'),
+                              ),
+                            );
+                            return;
+                          }
                           authController.registerUser(
                             emailController.text,
                             passwordController.text,

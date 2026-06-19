@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
@@ -278,24 +279,43 @@ class DetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       color: CustomColors.mabarSurfaceCard,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Ketersediaan',
                           style: TextStyle(
                             fontSize: 20,
                             color: CustomColors.mabarTextSecondary,
                           ),
                         ),
-                        Text(
-                          '15 Komputer',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: CustomColors.mabarCyan,
-                          ),
-                        ),
+                        venue['id'] != null
+                            ? FutureBuilder<List<Map<String, dynamic>>>(
+                                future: FirestoreService.getVenueComputersOnce(
+                                    venue['id'] as String),
+                                builder: (context, snap) {
+                                  final n = snap.data?.length;
+                                  final label = n == null
+                                      ? '...'
+                                      : '$n Unit';
+                                  return Text(
+                                    label,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: CustomColors.mabarCyan,
+                                    ),
+                                  );
+                                },
+                              )
+                            : const Text(
+                                '-',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  color: CustomColors.mabarCyan,
+                                ),
+                              ),
                       ],
                     ),
                   ),

@@ -189,7 +189,7 @@ class _BookingPageState extends State<BookingPage> {
     try {
       success = await FirestoreService.createBooking(
         venueId: widget.venue['id'] as String,
-        venueName: widget.venue['name'] as String,
+        venueName: widget.venue['name'] as String? ?? '-',
         startTime: _startTime!,
         endTime: _endTime!,
         durationHours: _durasiJam,
