@@ -1,67 +1,123 @@
 # MabarKeun
 
-Aplikasi cari & booking tempat gaming (warnet/rental PS) berbasis Flutter + Firebase.
+Aplikasi mobile untuk mencari dan booking tempat gaming (warnet / rental PS), lengkap dengan
+panel admin per-warnet. Dibangun dengan **Flutter + Firebase**.
 
-## 🔑 Akun Demo (untuk dicoba teman-teman)
+---
 
-Sudah di-seed ke Firebase project `mabar-slurd`. Tinggal login pakai akun di bawah:
+## Fitur
 
-| Role | Email | Password | Warnet yang dikelola |
-|------|-------|----------|----------------------|
-| 🎮 **Gamer (user)** | `gamer@mabarkeun.com` | `Gamer123` | — (cari tempat, booking, riwayat) |
-| 🛠️ **Admin 1** | `admin@mabarkeun.com` | `Admin123` | GG Arena Demo |
-| 🛠️ **Admin 2** | `admin2@mabarkeun.com` | `Admin123` | Nexus Esports |
-| 🛠️ **Admin 3** | `admin3@mabarkeun.com` | `Admin123` | CyberShop Hub |
+### Untuk Gamer (user)
+- Cari warnet terdekat (peta + daftar), **search** per nama, dan **filter** (urutan + harga maks)
+- Lihat detail warnet: foto, jam buka, fasilitas, lokasi, harga, dan **ulasan**
+- Booking: pilih tanggal, jam (24 jam), durasi, **unit perangkat** (PC/Console + spek),
+  dan **metode pembayaran**
+- Ketersediaan unit **real-time** (unit yang sudah dibooking ditandai otomatis)
+- Riwayat booking: lihat detail, **batalkan**, atau **ubah jadwal (reschedule)**
+- Beri **rating & ulasan** ke warnet
+- Notifikasi dari aktivitas booking sendiri
 
-Setiap warnet yang tampil di beranda user **dimiliki salah satu admin** di atas, lengkap dengan
-foto, jam buka, fasilitas, lokasi, harga, dan 15 unit perangkat — semuanya **bisa diedit** admin
-masing-masing lewat tab **Venue Saya**.
+### Untuk Admin Warnet
+- Dashboard **booking masuk** + statistik (total booking, hari ini, pendapatan)
+- **Tandai booking selesai**
+- Kelola venue: buat / edit / hapus, atur harga, label, **lokasi (GPS)**,
+  **foto (upload galeri / URL)**, **jam buka**, **fasilitas**
+- Kelola **perangkat per-warnet**: tambah / edit / hapus unit (kode, nama, spek, tier, tipe)
 
-Alur coba: login **admin** lihat/kelola warnet → logout → login **gamer** → booking salah satu
-warnet → logout → login **admin** pemiliknya → booking muncul di tab Booking, bisa **Tandai Selesai**.
+---
 
-> Daftar akun baru juga bisa lewat tombol **Daftar**, ada pilihan tipe akun **Gamer** / **Admin Warnet**.
+## Akun Demo
 
-## 🧰 Tech Stack
+Login dengan akun di bawah (sudah di-seed ke project `mabar-slurd`):
 
-- **Flutter** (Dart) + **GetX** (state management)
-- **Firebase**: Authentication, Cloud Firestore
-- **flutter_map** + OpenStreetMap, geolocator/geocoding (peta & lokasi)
-- Clean Architecture (feature-first: `lib/src/feat/<fitur>/presentation/...`)
-- Codegen: Freezed, json_serializable
+| Role | Email | Password | Warnet |
+|------|-------|----------|--------|
+| Gamer | `gamer@mabarkeun.com` | `Gamer123` | — |
+| Admin 1 | `admin@mabarkeun.com` | `Admin123` | GG Arena Demo |
+| Admin 2 | `admin2@mabarkeun.com` | `Admin123` | Nexus Esports |
+| Admin 3 | `admin3@mabarkeun.com` | `Admin123` | CyberShop Hub |
 
-## 🚀 Menjalankan
+Tiap warnet di beranda dimiliki salah satu admin, lengkap dengan foto, jam buka, fasilitas,
+lokasi, harga, dan unit perangkat — semuanya bisa diedit admin masing-masing.
+
+**Alur coba:** login admin → kelola warnet → logout → login gamer → booking → logout →
+login admin pemilik → booking muncul di dashboard, tekan **Tandai Selesai**.
+
+> Bisa juga daftar akun baru lewat tombol **Daftar** (pilih tipe **Gamer** / **Admin Warnet**).
+
+---
+
+## Tech Stack
+
+- **Flutter** (Dart) + **GetX** — state management & routing
+- **Firebase** — Authentication, Cloud Firestore, Storage
+- **flutter_map** + OpenStreetMap, **geolocator** / **geocoding** — peta & lokasi
+- **image_picker** — pilih foto dari galeri
+- Arsitektur **feature-first**: `lib/src/feat/<fitur>/presentation/...`
+
+---
+
+## Menjalankan
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-## 👤 Role & Admin
+---
 
-- Admin bisa kelola tiap warnetnya: **info & harga**, **perangkat per-unit**
-  (PC/Console + spek), **lokasi** (GPS), **foto** (URL), **jam buka**, dan **fasilitas**.
-- **Role** disimpan di `users/{uid}.role` (`user` / `admin`), dipilih saat registrasi.
-- Sebagai fallback, siapa pun yang **memiliki venue** (`venues.owner_uid == uid`)
-  otomatis dianggap **admin** — jadi admin = pemilik warnet.
-- Routing setelah login: admin → `AdminShell`, user → `MainShell`.
+## Setup Firebase
 
-### Seed ulang akun demo
+Sebagian fitur menulis ke Firestore/Storage, jadi rules perlu di-deploy sekali oleh
+pemilik project. Paling mudah lewat **Firebase Console**:
 
-Butuh Node.js. Skrip akan membuat/menyesuaikan akun demo + venue contoh:
+1. **Firestore Rules** — Console → Firestore Database → tab **Rules** →
+   paste isi [firestore.rules](firestore.rules) → **Publish**
+2. **Aktifkan Storage** — Console → Build → **Storage** → Get started →
+   tab **Rules** → paste isi [storage.rules](storage.rules) → **Publish**
+
+Atau via CLI (perlu `firebase login`):
+
+```bash
+firebase deploy --only firestore:rules,storage
+```
+
+### Seed akun & data demo
+
+Butuh Node.js. Membuat 1 gamer + 3 admin beserta warnet & 15 unit perangkat tiap warnet:
 
 ```bash
 node tool/seed_accounts.mjs
 ```
 
-### Catatan security rules
+> Catatan: penulisan dokumen `users`/`computers`/`reviews` & upload foto hanya berhasil
+> setelah rules di-deploy. Sebelum itu, deteksi admin tetap jalan via fallback kepemilikan venue.
 
-File [`firestore.rules`](firestore.rules) sudah role-aware (admin hanya bisa
-kelola venue & booking miliknya). Untuk mengaktifkannya di server, deploy sekali:
+---
 
-```bash
-firebase deploy --only firestore:rules
+## Model Data (Firestore)
+
+```
+users/{uid}
+  role            : "user" | "admin"
+  display_name, phone
+
+venues/{venueId}
+  name, price_per_hour, rating, badge, owner_uid
+  lat, lng, address, image_url, hours, facilities[]
+
+  computers/{id}    code, name, spec, tier, type (PC|Console)
+  reviews/{id}      user_id, user_name, rating, comment, created_at
+
+bookings/{id}
+  venue_id, venue_name, user_id, computer_id, device_type
+  start_time, end_time, duration_hours, total_price
+  payment_method, status (active|done|cancelled), created_at
 ```
 
-Sebelum di-deploy, penulisan dokumen `users` (role) mungkin ditolak server — itu
-sebabnya deteksi admin memakai fallback kepemilikan venue agar demo tetap jalan.
+### Role & Admin
+- **Role** disimpan di `users/{uid}.role`, dipilih saat registrasi.
+- Fallback: siapa pun yang memiliki venue (`owner_uid == uid`) dianggap **admin**.
+- Routing login: admin → `AdminShell`, user → `MainShell`.
+- Keamanan: admin hanya bisa mengelola venue, perangkat, & booking miliknya
+  (lihat [firestore.rules](firestore.rules)).
