@@ -357,7 +357,11 @@ class AdminComputersPage extends StatelessWidget {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      codeC.dispose();
+      nameC.dispose();
+      specC.dispose();
+    });
   }
 
   Widget _field(TextEditingController c, String hint) {

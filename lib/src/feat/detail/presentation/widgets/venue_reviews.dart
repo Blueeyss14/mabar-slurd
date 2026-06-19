@@ -302,6 +302,6 @@ class _VenueReviewsState extends State<VenueReviews> {
           ),
         );
       },
-    );
+    ).whenComplete(commentC.dispose);
   }
 }
