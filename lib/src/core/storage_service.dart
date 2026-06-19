@@ -19,4 +19,18 @@ class StorageService {
       return null;
     }
   }
+
+  /// Upload foto profil user, kembalikan URL unduhan (atau null bila gagal).
+  /// Disimpan di path users/{uid}/avatar.jpg.
+  static Future<String?> uploadProfilePhoto(String filePath) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return null;
+    try {
+      final ref = _storage.ref('users/$uid/avatar.jpg');
+      await ref.putFile(File(filePath));
+      return await ref.getDownloadURL();
+    } catch (_) {
+      return null;
+    }
+  }
 }
