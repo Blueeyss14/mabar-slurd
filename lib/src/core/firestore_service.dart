@@ -33,8 +33,11 @@ class FirestoreService {
           .where((doc) {
             final data = doc.data();
             if (data['computer_id'] == null) return false;
-            final existingStart = (data['start_time'] as Timestamp).toDate();
-            final existingEnd = (data['end_time'] as Timestamp).toDate();
+            final start = data['start_time'];
+            final end = data['end_time'];
+            if (start is! Timestamp || end is! Timestamp) return false;
+            final existingStart = start.toDate();
+            final existingEnd = end.toDate();
             return existingStart.isBefore(endTime) &&
                 existingEnd.isAfter(startTime);
           })
@@ -47,7 +50,7 @@ class FirestoreService {
 
   /// Buat booking baru. Ketersediaan slot dicek tepat sebelum menulis.
   ///
-  /// Catatan: pengecekan ini memakai query koleksi (lihat [getAvailableSlots]),
+  /// Catatan: pengecekan ini memakai query koleksi (lihat [getBookedComputers]),
   /// sehingga TIDAK bisa dibungkus Firestore transaction (transaction hanya
   /// boleh membaca dokumen tunggal, bukan menjalankan query). Akibatnya masih
   /// ada jendela race yang sangat kecil bila dua user memesan slot yang sama
@@ -111,8 +114,11 @@ class FirestoreService {
         if (doc.id == bookingId) return false; // abaikan diri sendiri
         final data = doc.data();
         if (data['computer_id'] != computerId) return false;
-        final s = (data['start_time'] as Timestamp).toDate();
-        final e = (data['end_time'] as Timestamp).toDate();
+        final start = data['start_time'];
+        final end = data['end_time'];
+        if (start is! Timestamp || end is! Timestamp) return false;
+        final s = start.toDate();
+        final e = end.toDate();
         return s.isBefore(endTime) && e.isAfter(startTime);
       });
       if (bentrok) return false;
