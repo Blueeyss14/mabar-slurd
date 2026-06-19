@@ -15,32 +15,6 @@ class FirestoreService {
         );
   }
 
-  static Future<int> getAvailableSlots(
-    String venueId,
-    DateTime startTime,
-    DateTime endTime,
-    int totalSlots,
-  ) async {
-    try {
-      final snapshot = await _db
-          .collection('bookings')
-          .where('venue_id', isEqualTo: venueId)
-          .where('status', isEqualTo: 'active')
-          .get();
-
-      final overlapping = snapshot.docs.where((doc) {
-        final existingStart = (doc['start_time'] as Timestamp).toDate();
-        final existingEnd = (doc['end_time'] as Timestamp).toDate();
-        return existingStart.isBefore(endTime) &&
-            existingEnd.isAfter(startTime);
-      }).length;
-
-      return totalSlots - overlapping;
-    } catch (_) {
-      return totalSlots;
-    }
-  }
-
   /// Kembalikan daftar id komputer yang sudah dibooking (status active) dan
   /// waktunya overlap dengan rentang [startTime]–[endTime] di sebuah venue.
   static Future<Set<String>> getBookedComputers(
@@ -534,6 +508,7 @@ class FirestoreService {
   // Disimpan di subcollection venues/{venueId}/reviews.
 
   /// Kirim ulasan untuk sebuah venue. user_id diikat ke akun yang login.
+  /// Setelah tersimpan, rata-rata rating venue diperbarui agar konsisten.
   static Future<bool> addReview(
     String venueId, {
     required int rating,
@@ -542,17 +517,33 @@ class FirestoreService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
     try {
-      await _db
-          .collection('venues')
-          .doc(venueId)
-          .collection('reviews')
-          .add({
+      final reviewsCol =
+          _db.collection('venues').doc(venueId).collection('reviews');
+      await reviewsCol.add({
         'user_id': user.uid,
         'user_name': user.displayName ?? 'Pengguna',
         'rating': rating,
         'comment': comment.trim(),
         'created_at': FieldValue.serverTimestamp(),
       });
+
+      // Best-effort: hitung ulang rata-rata & jumlah ulasan ke dokumen venue.
+      // Bila ditolak rules (mis. bukan pemilik), ulasan tetap dianggap sukses.
+      try {
+        final all = await reviewsCol.get();
+        final ratings = all.docs
+            .map((d) => (d.data()['rating'] as num?)?.toDouble() ?? 0)
+            .toList();
+        if (ratings.isNotEmpty) {
+          final avg = ratings.reduce((a, b) => a + b) / ratings.length;
+          await _db.collection('venues').doc(venueId).update({
+            'rating': double.parse(avg.toStringAsFixed(1)),
+            'rating_count': ratings.length,
+          });
+        }
+      } catch (_) {
+        // abaikan; rata-rata tetap dihitung lokal di UI
+      }
       return true;
     } catch (_) {
       return false;

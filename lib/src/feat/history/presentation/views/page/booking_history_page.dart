@@ -133,7 +133,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                           date: Formatters.tanggal(startTime),
                           time:
                               '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
-                          total: (item['total_price'] as num).toInt(),
+                          total: (item['total_price'] as num?)?.toInt() ?? 0,
                           status: statusLabel,
                           onTap: () => _goToDetail(
                             item,
@@ -169,7 +169,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           subTitle: item['device_type'] as String? ?? '-',
           date: Formatters.tanggal(startTime),
           time: '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
-          total: (item['total_price'] as num).toInt(),
+          total: (item['total_price'] as num?)?.toInt() ?? 0,
           status: statusLabel,
           durationHours: (item['duration_hours'] as num?)?.toInt() ?? 1,
           data: item,

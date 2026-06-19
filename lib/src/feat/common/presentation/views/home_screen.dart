@@ -246,6 +246,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       0,
                               badge: place['badge'] as String?,
                               imageUrl: place['image_url'] as String?,
+                              hours: place['hours'] as String?,
+                              facilities: (place['facilities'] as List?)
+                                      ?.map((e) => e.toString())
+                                      .toList() ??
+                                  const [],
                               onTap: () {
                                 Navigator.push(
                                   context,

@@ -76,6 +76,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _simpan() async {
     FocusScope.of(context).unfocus();
+    if (_usernameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama pengguna tidak boleh kosong.')),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     final messenger = ScaffoldMessenger.of(context);
 

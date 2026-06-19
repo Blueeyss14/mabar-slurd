@@ -48,8 +48,6 @@ class BookingHistoryDetailPage extends StatelessWidget {
     // total_price disimpan dalam satuan ribuan (mis. 30 = Rp 30.000),
     // jadi dikali 1000 untuk mendapat rupiah penuh.
     final harga = total * 1000;
-    const biayaLayanan = 2000;
-    final totalBayar = harga + biayaLayanan;
 
     return Scaffold(
       backgroundColor: CustomColors.mabarBgDark,
@@ -83,7 +81,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildDetailCard(),
             const SizedBox(height: 16),
-            _buildPaymentCard(harga, biayaLayanan, totalBayar),
+            _buildPaymentCard(harga),
             if (status == 'Berlangsung') ...[
               const SizedBox(height: 16),
               _buildRescheduleButton(context),
@@ -207,7 +205,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentCard(int harga, int biayaLayanan, int totalBayar) {
+  Widget _buildPaymentCard(int harga) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -220,11 +218,6 @@ class BookingHistoryDetailPage extends StatelessWidget {
               "Metode", data['payment_method'] as String? ?? 'Bayar di Tempat'),
           const SizedBox(height: 12),
           _buildPaymentRow("Harga Sewa", "Rp ${Formatters.rupiah(harga)}"),
-          const SizedBox(height: 12),
-          _buildPaymentRow(
-            "Biaya Layanan",
-            "Rp ${Formatters.rupiah(biayaLayanan)}",
-          ),
           const SizedBox(height: 14),
           const Divider(height: 1, color: CustomColors.mabarBorderSubtle),
           const SizedBox(height: 14),
@@ -240,7 +233,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
                 ),
               ),
               Text(
-                "Rp ${Formatters.rupiah(totalBayar)}",
+                "Rp ${Formatters.rupiah(harga)}",
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
