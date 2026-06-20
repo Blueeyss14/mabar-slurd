@@ -19,18 +19,20 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   static const List<String> _filters = [
     'Semua',
+    'Akan Datang',
     'Berlangsung',
     'Selesai',
     'Dibatalkan',
   ];
 
-  /// Tentukan status tampilan berdasarkan end_time dan status Firestore.
-  /// Jika status Firestore 'active' tapi end_time sudah lewat → otomatis 'Selesai'.
-  String _resolveStatus(String raw, DateTime endTime) {
+  /// Tentukan status tampilan berdasarkan start/end_time dan status Firestore.
+  String _resolveStatus(String raw, DateTime startTime, DateTime endTime) {
     if (raw == 'cancelled') return 'Dibatalkan';
     if (raw == 'done') return 'Selesai';
-    if (DateTime.now().isAfter(endTime)) return 'Selesai';
-    return 'Berlangsung';
+    final now = DateTime.now();
+    if (now.isAfter(endTime)) return 'Selesai';
+    if (now.isAfter(startTime)) return 'Berlangsung';
+    return 'Akan Datang';
   }
 
   @override
@@ -71,8 +73,9 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
               ? allData
               : allData.where((item) {
                   final statusRaw = item['status'] as String? ?? 'active';
+                  final startTime = (item['start_time'] as Timestamp).toDate();
                   final endTime = (item['end_time'] as Timestamp).toDate();
-                  return _resolveStatus(statusRaw, endTime) == _selectedFilter;
+                  return _resolveStatus(statusRaw, startTime, endTime) == _selectedFilter;
                 }).toList();
 
           return SingleChildScrollView(
@@ -118,6 +121,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                             .toDate();
                         final statusLabel = _resolveStatus(
                           item['status'] as String? ?? 'active',
+                          startTime,
                           endTime,
                         );
 

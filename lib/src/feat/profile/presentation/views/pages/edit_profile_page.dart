@@ -63,15 +63,66 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _uploadingPhoto = true);
     final url = await StorageService.uploadProfilePhoto(picked.path);
     if (!mounted) return;
-    setState(() {
-      _uploadingPhoto = false;
-      if (url != null) _photoUrl = url;
-    });
-    if (url == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal upload foto. Pastikan Storage aktif.')),
-      );
+    setState(() => _uploadingPhoto = false);
+
+    if (url != null) {
+      setState(() => _photoUrl = url);
+    } else {
+      _showPasteUrlDialog();
     }
+  }
+
+  void _showPasteUrlDialog() {
+    final urlC = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Upload Foto Tidak Tersedia',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Firebase Storage belum aktif. Tempel URL foto profil kamu di bawah (opsional):',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlC,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'https://...',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: const Color(0xFF2A2A3A),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () {
+              final v = urlC.text.trim();
+              if (v.isNotEmpty) setState(() => _photoUrl = v);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Simpan',
+                style: TextStyle(color: CustomColors.mabarBorderFocus, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _simpan() async {

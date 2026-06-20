@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class PaymentMethodPage extends StatefulWidget {
@@ -18,6 +19,34 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     {'icon': Icons.qr_code, 'name': 'QRIS', 'info': 'Scan untuk bayar'},
     {'icon': Icons.credit_card, 'name': 'Kartu Kredit/Debit', 'info': 'Visa / Mastercard'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferred();
+  }
+
+  Future<void> _loadPreferred() async {
+    final saved = await FirestoreService.getPreferredPayment();
+    if (!mounted || saved == null) return;
+    final idx = _methods.indexWhere((m) => m['name'] == saved);
+    if (idx >= 0) setState(() => _selected = idx);
+  }
+
+  Future<void> _selectMethod(int index) async {
+    setState(() => _selected = index);
+    final name = _methods[index]['name'] as String;
+    await FirestoreService.savePreferredPayment(name);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$name disimpan sebagai metode favorit.',
+            style: const TextStyle(color: CustomColors.mabarTextPrimary, fontWeight: FontWeight.bold)),
+        backgroundColor: CustomColors.mabarPurpleBg,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +107,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           final item = _methods[index];
           final bool isActive = _selected == index;
           return GestureDetector(
-            onTap: () => setState(() => _selected = index),
+            onTap: () => _selectMethod(index),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
