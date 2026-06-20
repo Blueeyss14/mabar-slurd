@@ -295,7 +295,7 @@ class _VenueReviewsState extends State<VenueReviews> {
                       ),
                       onPressed: () async {
                         final messenger = ScaffoldMessenger.of(context);
-                        final ok = await FirestoreService.addReview(
+                        final err = await FirestoreService.addReview(
                           widget.venueId,
                           rating: rating,
                           comment: commentC.text,
@@ -305,17 +305,17 @@ class _VenueReviewsState extends State<VenueReviews> {
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text(
-                              ok ? 'Ulasan terkirim. Terima kasih!' : 'Gagal mengirim ulasan.',
+                              err ?? 'Ulasan terkirim. Terima kasih!',
                               style: const TextStyle(
                                   color: CustomColors.mabarTextPrimary,
                                   fontWeight: FontWeight.bold),
                             ),
-                            backgroundColor: ok
+                            backgroundColor: err == null
                                 ? CustomColors.mabarPurpleBg
                                 : Colors.red.shade800,
                           ),
                         );
-                        if (ok) _load();
+                        if (err == null) _load();
                       },
                       child: const Text('Kirim Ulasan',
                           style: TextStyle(

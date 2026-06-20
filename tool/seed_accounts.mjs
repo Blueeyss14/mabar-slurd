@@ -237,8 +237,25 @@ async function addBooking(idToken, userId, venueId, venueName, computerId, start
   return _createBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method, 'done');
 }
 
+async function activeBookingExists(idToken, venueId, userId, startIso) {
+  const res = await fetch(`${FS}:runQuery`, { method: 'POST',
+    headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: 'bookings' }],
+      where: { compositeFilter: { op: 'AND', filters: [
+        { fieldFilter: { field: { fieldPath: 'venue_id' }, op: 'EQUAL', value: { stringValue: venueId } } },
+        { fieldFilter: { field: { fieldPath: 'user_id' }, op: 'EQUAL', value: { stringValue: userId } } },
+        { fieldFilter: { field: { fieldPath: 'start_time' }, op: 'EQUAL', value: { timestampValue: startIso } } },
+      ]}},
+      limit: 1,
+    }}) });
+  const d = await res.json();
+  return (d || []).some((x) => x.document);
+}
+
 async function addBookingActive(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method) {
-  // Booking aktif boleh lebih dari satu (berbeda venue/waktu), cukup cek duplikat per waktu
+  const already = await activeBookingExists(idToken, venueId, userId, startIso);
+  if (already) return 'sudah ada, skip';
   return _createBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method, 'active');
 }
 

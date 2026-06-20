@@ -242,6 +242,20 @@ class FirestoreService {
     }
   }
 
+  static Future<void> savePreferredPayment(String method) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).set(
+      {'preferred_payment': method},
+      SetOptions(merge: true),
+    );
+  }
+
+  static Future<String?> getPreferredPayment() async {
+    final profile = await getUserProfile();
+    return profile['preferred_payment'] as String?;
+  }
+
   /// Ambil role user yang sedang login: 'admin' atau 'user'.
   ///
   /// Dua sumber:
@@ -537,13 +551,13 @@ class FirestoreService {
 
   /// Kirim ulasan untuk sebuah venue. user_id diikat ke akun yang login.
   /// Setelah tersimpan, rata-rata rating venue diperbarui agar konsisten.
-  static Future<bool> addReview(
+  static Future<String?> addReview(
     String venueId, {
     required int rating,
     required String comment,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
+    if (user == null) return 'Kamu belum login.';
     try {
       final reviewsCol =
           _db.collection('venues').doc(venueId).collection('reviews');
@@ -556,7 +570,6 @@ class FirestoreService {
       });
 
       // Best-effort: hitung ulang rata-rata & jumlah ulasan ke dokumen venue.
-      // Bila ditolak rules (mis. bukan pemilik), ulasan tetap dianggap sukses.
       try {
         final all = await reviewsCol.get();
         final ratings = all.docs
@@ -569,12 +582,10 @@ class FirestoreService {
             'rating_count': ratings.length,
           });
         }
-      } catch (_) {
-        // abaikan; rata-rata tetap dihitung lokal di UI
-      }
-      return true;
-    } catch (_) {
-      return false;
+      } catch (_) {}
+      return null; // null = sukses
+    } catch (e) {
+      return 'Gagal mengirim ulasan: $e';
     }
   }
 

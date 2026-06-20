@@ -15,11 +15,13 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   String? _selectedVenueId;
 
-  String _resolveStatus(String raw, DateTime endTime) {
+  String _resolveStatus(String raw, DateTime startTime, DateTime endTime) {
     if (raw == 'cancelled') return 'Dibatalkan';
     if (raw == 'done') return 'Selesai';
-    if (DateTime.now().isAfter(endTime)) return 'Selesai';
-    return 'Berlangsung';
+    final now = DateTime.now();
+    if (now.isAfter(endTime)) return 'Selesai';
+    if (now.isAfter(startTime)) return 'Berlangsung';
+    return 'Akan Datang';
   }
 
   Color _statusColor(String status) {
@@ -28,6 +30,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         return Colors.red.shade400;
       case 'Selesai':
         return CustomColors.mabarTextSecondary;
+      case 'Akan Datang':
+        return CustomColors.mabarCyan;
       default:
         return CustomColors.mabarGreen;
     }
@@ -307,7 +311,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final startTime = (b['start_time'] as Timestamp).toDate();
     final endTime = (b['end_time'] as Timestamp).toDate();
     final statusRaw = b['status'] as String? ?? 'active';
-    final status = _resolveStatus(statusRaw, endTime);
+    final status = _resolveStatus(statusRaw, startTime, endTime);
     final color = _statusColor(status);
 
     final computerId = b['computer_id'] as String?;
@@ -316,7 +320,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ? '$computerId · $deviceType'
         : computerId ?? deviceType ?? '-';
 
-    final canMarkDone = statusRaw == 'active' && DateTime.now().isBefore(endTime);
+    final canMarkDone = statusRaw == 'active' && (status == 'Berlangsung' || status == 'Akan Datang');
 
     return Container(
       padding: const EdgeInsets.all(14),

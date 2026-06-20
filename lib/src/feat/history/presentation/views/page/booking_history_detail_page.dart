@@ -30,6 +30,8 @@ class BookingHistoryDetailPage extends StatelessWidget {
 
   ({Color color, IconData icon}) get _statusStyle {
     switch (status) {
+      case 'Akan Datang':
+        return (color: CustomColors.mabarCyan, icon: Icons.event_outlined);
       case 'Berlangsung':
         return (color: CustomColors.mabarYellow, icon: Icons.bolt);
       case 'Dibatalkan':
@@ -739,7 +741,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
                       ),
                       onPressed: () async {
                         final messenger = ScaffoldMessenger.of(context);
-                        final ok = await FirestoreService.addReview(
+                        final err = await FirestoreService.addReview(
                           venueId,
                           rating: rating,
                           comment: commentC.text,
@@ -749,15 +751,13 @@ class BookingHistoryDetailPage extends StatelessWidget {
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text(
-                              ok
-                                  ? 'Ulasan terkirim. Terima kasih!'
-                                  : 'Gagal mengirim ulasan.',
+                              err ?? 'Ulasan terkirim. Terima kasih!',
                               style: const TextStyle(
                                 color: CustomColors.mabarTextPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            backgroundColor: ok
+                            backgroundColor: err == null
                                 ? CustomColors.mabarPurpleBg
                                 : Colors.red.shade800,
                           ),
