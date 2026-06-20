@@ -194,17 +194,21 @@ class MapGaming extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Row(
+                        Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.star_rounded,
                               color: CustomColors.mabarStar,
                               size: 16,
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              "4.7 · Buka sekarang",
-                              style: TextStyle(
+                              [
+                                '${(place['rating'] as num?)?.toDouble() ?? 0}',
+                                if (place['distance'] != null)
+                                  '${place['distance']} km',
+                              ].join(' · '),
+                              style: const TextStyle(
                                 fontSize: 13,
                                 color: CustomColors.mabarTextSecondary,
                               ),

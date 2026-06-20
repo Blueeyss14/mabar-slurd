@@ -1,4 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/core/storage_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
@@ -10,12 +14,34 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController _usernameController =
-      TextEditingController(text: "pro_gamer_99");
-  final TextEditingController _emailController =
-      TextEditingController(text: "gaming@example.com");
-  final TextEditingController _phoneController =
-      TextEditingController(text: "0812-3456-7890");
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  bool _isLoading = false;
+  bool _uploadingPhoto = false;
+  String? _photoUrl;
+  String _initialEmail = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    _usernameController.text = user?.displayName ?? '';
+    _emailController.text = user?.email ?? '';
+    _initialEmail = user?.email ?? '';
+    _photoUrl = user?.photoURL;
+    final profile = await FirestoreService.getUserProfile();
+    if (mounted) {
+      setState(() {
+        _phoneController.text = profile['phone'] as String? ?? '';
+        _photoUrl ??= profile['photo_url'] as String?;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -25,21 +51,138 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  void _simpan() {
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 600,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+
+    setState(() => _uploadingPhoto = true);
+    final url = await StorageService.uploadProfilePhoto(picked.path);
+    if (!mounted) return;
+    setState(() => _uploadingPhoto = false);
+
+    if (url != null) {
+      setState(() => _photoUrl = url);
+    } else {
+      _showPasteUrlDialog();
+    }
+  }
+
+  void _showPasteUrlDialog() {
+    final urlC = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Upload Foto Tidak Tersedia',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Firebase Storage belum aktif. Tempel URL foto profil kamu di bawah (opsional):',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlC,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'https://...',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: const Color(0xFF2A2A3A),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () {
+              final v = urlC.text.trim();
+              if (v.isNotEmpty) setState(() => _photoUrl = v);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Simpan',
+                style: TextStyle(color: CustomColors.mabarBorderFocus, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _simpan() async {
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+    if (_usernameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama pengguna tidak boleh kosong.')),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    final ok = await FirestoreService.updateUserProfile(
+      displayName: _usernameController.text,
+      phone: _phoneController.text,
+      photoUrl: _photoUrl,
+    );
+
+    // Email berubah? proses terpisah (kirim verifikasi).
+    final newEmail = _emailController.text.trim();
+    String? emailMsg;
+    if (ok && newEmail.isNotEmpty && newEmail != _initialEmail) {
+      final code = await FirestoreService.updateEmail(newEmail);
+      switch (code) {
+        case 'verify-sent':
+          emailMsg = 'Cek email baru untuk verifikasi sebelum email berubah.';
+          break;
+        case 'requires-recent-login':
+          emailMsg = 'Untuk ganti email, logout lalu login lagi dulu ya.';
+          break;
+        case 'email-already-in-use':
+          emailMsg = 'Email itu sudah dipakai akun lain.';
+          break;
+        case 'invalid-email':
+          emailMsg = 'Format email baru tidak valid.';
+          break;
+        default:
+          emailMsg = 'Gagal mengubah email.';
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    messenger.showSnackBar(
+      SnackBar(
         content: Text(
-          'Profil berhasil diperbarui',
-          style: TextStyle(
+          ok
+              ? 'Profil berhasil diperbarui.${emailMsg != null ? ' $emailMsg' : ''}'
+              : 'Gagal memperbarui profil',
+          style: const TextStyle(
             color: CustomColors.mabarTextPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: CustomColors.mabarPurpleBg,
+        backgroundColor:
+            ok ? CustomColors.mabarPurpleBg : Colors.red.shade800,
       ),
     );
-    Navigator.pop(context);
+    if (ok && emailMsg == null) Navigator.pop(context);
   }
 
   @override
@@ -72,42 +215,62 @@ class _EditProfilePageState extends State<EditProfilePage> {
           children: [
             const SizedBox(height: 10),
             Center(
-              child: Stack(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: CustomColors.mabarBorderFocus,
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 60,
-                      color: CustomColors.mabarTextPrimary,
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
+              child: GestureDetector(
+                onTap: _uploadingPhoto ? null : _pickAndUploadPhoto,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: CustomColors.mabarPurpleLight,
-                        border: Border.all(
-                          color: CustomColors.mabarBgDark,
-                          width: 2,
-                        ),
+                        color: CustomColors.mabarBorderFocus,
+                        image: (_photoUrl != null && _photoUrl!.isNotEmpty)
+                            ? DecorationImage(
+                                image: NetworkImage(_photoUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 16,
-                        color: Colors.white,
+                      child: (_photoUrl != null && _photoUrl!.isNotEmpty)
+                          ? null
+                          : const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: CustomColors.mabarTextPrimary,
+                            ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: CustomColors.mabarPurpleLight,
+                          border: Border.all(
+                            color: CustomColors.mabarBgDark,
+                            width: 2,
+                          ),
+                        ),
+                        child: _uploadingPhoto
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.camera_alt,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -141,15 +304,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: _simpan,
-                child: const Text(
-                  "SIMPAN PERUBAHAN",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                onPressed: _isLoading ? null : _simpan,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Text(
+                        "SIMPAN PERUBAHAN",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 30),

@@ -1,0 +1,78 @@
+rules_version = '2';
+
+// Firestore Security Rules untuk MabarKeun.
+//
+// Peran:
+// - user  : pelanggan biasa (booking).
+// - admin : pemilik warnet (punya venue, kelola booking di venue-nya).
+//
+// Prinsip:
+// - venues  : publik dibaca; hanya admin pemilik (owner_uid) yang boleh tulis.
+// - bookings: dibaca semua user login (perlu untuk cek ketersediaan & dashboard
+//             admin); dibuat oleh pemilik booking; diubah oleh pemilik booking
+//             ATAU oleh admin pemilik venue terkait (mis. tandai selesai).
+// - users   : tiap user hanya boleh baca/tulis dokumennya sendiri.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Owner_uid venue tertentu (untuk cek admin pemilik).
+    function venueOwner(venueId) {
+      return get(/databases/$(database)/documents/venues/$(venueId)).data.owner_uid;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /venues/{venueId} {
+      allow read: if true;
+
+      // Buat venue: harus login & owner_uid sesuai pembuat.
+      allow create: if isSignedIn()
+                    && request.resource.data.owner_uid == request.auth.uid;
+
+      // Ubah/hapus venue: hanya admin pemiliknya.
+      allow update, delete: if isSignedIn()
+                            && resource.data.owner_uid == request.auth.uid;
+
+      // Perangkat (komputer/konsol) per-venue.
+      // Dibaca publik (halaman booking); ditulis hanya admin pemilik venue.
+      match /computers/{computerId} {
+        allow read: if true;
+        allow write: if isSignedIn()
+                     && venueOwner(venueId) == request.auth.uid;
+      }
+
+      // Ulasan per-venue.
+      // Dibaca publik; dibuat user login dengan user_id sesuai dirinya;
+      // diubah/hapus hanya oleh penulis ulasan.
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn()
+                      && request.resource.data.user_id == request.auth.uid;
+        allow update, delete: if isSignedIn()
+                              && resource.data.user_id == request.auth.uid;
+      }
+    }
+
+    match /bookings/{bookingId} {
+      // Cek ketersediaan & dashboard admin perlu membaca booking.
+      allow read: if isSignedIn();
+
+      // Buat booking: harus login & user_id sesuai pemilik.
+      allow create: if isSignedIn()
+                    && request.resource.data.user_id == request.auth.uid;
+
+      // Ubah/hapus: pemilik booking, atau admin pemilik venue terkait.
+      allow update, delete: if isSignedIn()
+                            && (
+                              resource.data.user_id == request.auth.uid
+                              || venueOwner(resource.data.venue_id) == request.auth.uid
+                            );
+    }
+  }
+}

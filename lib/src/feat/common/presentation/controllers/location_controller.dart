@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 
 class LocationController extends GetxController {
   Rx<LatLng?> currentLocation = Rx<LatLng?>(null);
@@ -10,33 +12,46 @@ class LocationController extends GetxController {
   RxString locationName = "Memuat lokasi...".obs;
   RxBool isLoading = false.obs;
 
-  // Daftar warnet terdekat (offset relatif dari lokasi user dalam derajat)
+  // Warnet terdekat dari Firestore (hanya yang punya koordinat lat/lng).
   RxList<Map<String, dynamic>> nearbyPlaces = <Map<String, dynamic>>[].obs;
 
-  static const List<Map<String, dynamic>> _placeOffsets = [
-    {'name': 'GG Arena', 'dLat': 0.006, 'dLng': 0.004},
-    {'name': 'Nexus Esports', 'dLat': -0.005, 'dLng': 0.007},
-    {'name': 'CyberShop Hub', 'dLat': 0.008, 'dLng': -0.006},
-    {'name': 'Telkom Gaming', 'dLat': -0.007, 'dLng': -0.005},
-    {'name': 'Pixel Lounge', 'dLat': 0.003, 'dLng': 0.009},
-  ];
+  List<Map<String, dynamic>> _venues = [];
+  StreamSubscription<List<Map<String, dynamic>>>? _venuesSub;
 
-  void _generateNearbyPlaces(LatLng center) {
-    nearbyPlaces.value = _placeOffsets.map((p) {
-      return {
-        'name': p['name'],
-        'location': LatLng(
-          center.latitude + (p['dLat'] as double),
-          center.longitude + (p['dLng'] as double),
-        ),
-      };
-    }).toList();
+  /// Susun ulang marker dari daftar venue + lokasi user (untuk hitung jarak).
+  void _rebuildNearby() {
+    final center = currentLocation.value;
+    final list = <Map<String, dynamic>>[];
+    for (final v in _venues) {
+      final lat = (v['lat'] as num?)?.toDouble();
+      final lng = (v['lng'] as num?)?.toDouble();
+      if (lat == null || lng == null) continue;
+
+      final entry = <String, dynamic>{...v, 'location': LatLng(lat, lng)};
+      if (center != null) {
+        final meters = Geolocator.distanceBetween(
+            center.latitude, center.longitude, lat, lng);
+        entry['distance'] = double.parse((meters / 1000).toStringAsFixed(1));
+      }
+      list.add(entry);
+    }
+    nearbyPlaces.value = list;
   }
 
   @override
   void onInit() {
     super.onInit();
+    _venuesSub = FirestoreService.getVenues().listen((venues) {
+      _venues = venues;
+      _rebuildNearby();
+    });
     _determinePosition();
+  }
+
+  @override
+  void onClose() {
+    _venuesSub?.cancel();
+    super.onClose();
   }
 
   Future<void> _determinePosition() async {
@@ -76,7 +91,7 @@ class LocationController extends GetxController {
       LatLng loc = LatLng(position.latitude, position.longitude);
       currentLocation.value = loc;
       selectedLocation.value = loc;
-      _generateNearbyPlaces(loc);
+      _rebuildNearby();
       await updateLocationName(loc);
     } catch (e) {
       debugPrint("Error getting location: $e");

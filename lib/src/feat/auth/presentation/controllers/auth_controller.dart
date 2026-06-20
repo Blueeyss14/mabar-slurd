@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart'; // Sesuaikan rute ke Shell Utama
+import 'package:mabar_slurd/src/feat/admin/presentation/views/admin_shell.dart';
 import 'package:mabar_slurd/src/feat/auth/presentation/views/login_screen.dart';
 
 class AuthController extends GetxController {
@@ -14,7 +16,8 @@ class AuthController extends GetxController {
   // ==========================================
   // LOGIKA REGISTRASI PENGGUNA BARU
   // ==========================================
-  Future<void> registerUser(String email, String password, {String username = ''}) async {
+  Future<void> registerUser(String email, String password,
+      {String username = '', bool isAdmin = false}) async {
     if (email.trim().isEmpty || password.trim().isEmpty) {
       _showSnackbar('Peringatan', 'Email dan password tidak boleh kosong, Slurd!', Colors.orange);
       return;
@@ -32,8 +35,20 @@ class AuthController extends GetxController {
         await credential.user?.updateDisplayName(username.trim());
       }
 
-      _showSnackbar('Sukses', 'Akun berhasil dibuat! Silakan masuk.', Colors.green);
-      
+      // Simpan role akun ke Firestore.
+      final uid = credential.user?.uid;
+      if (uid != null) {
+        await FirestoreService.setUserRole(uid, isAdmin ? 'admin' : 'user');
+      }
+
+      _showSnackbar(
+        'Sukses',
+        isAdmin
+            ? 'Akun admin berhasil dibuat! Silakan masuk.'
+            : 'Akun berhasil dibuat! Silakan masuk.',
+        Colors.green,
+      );
+
       // Mengarahkan pengguna langsung ke halaman Login
       Get.offAll(() => const LoginScreen());
     } on FirebaseAuthException catch (e) {
@@ -82,8 +97,8 @@ class AuthController extends GetxController {
 
       _showSnackbar('Berhasil', 'Selamat datang kembali di Mabar Slurd!', Colors.green);
 
-      // Pindah ke MainShell dan hapus history stack
-      Get.offAll(() => const MainShell());
+      // Routing sesuai role: admin → AdminShell, user → MainShell.
+      await routeByRole();
     } on FirebaseAuthException catch (e) {
       // Penanganan error login yang spesifik agar tidak memicu crash
       String errorMessage = 'Email atau kata sandi salah, Slurd!';
@@ -109,6 +124,58 @@ class AuthController extends GetxController {
   }
 
   // ==========================================
+  // LOGIKA RESET KATA SANDI (LUPA PASSWORD)
+  // ==========================================
+  Future<bool> resetPassword(String email) async {
+    if (email.trim().isEmpty) {
+      _showSnackbar('Peringatan', 'Masukkan email kamu dulu, Slurd!', Colors.orange);
+      return false;
+    }
+
+    try {
+      isLoading.value = true;
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      _showSnackbar(
+        'Terkirim',
+        'Tautan reset kata sandi sudah dikirim ke email kamu.',
+        Colors.green,
+      );
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'invalid-email':
+          errorMessage = 'Format email kamu salah, periksa lagi.';
+          break;
+        case 'user-not-found':
+          errorMessage = 'Email belum terdaftar, Slurd!';
+          break;
+        default:
+          errorMessage = 'Gagal mengirim tautan: ${e.message}';
+      }
+      _showSnackbar('Gagal', errorMessage, Colors.red);
+      return false;
+    } catch (e) {
+      _showSnackbar('Error', 'Gagal terhubung ke server Firebase.', Colors.red);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ==========================================
+  // ROUTING SESUAI ROLE (admin / user)
+  // ==========================================
+  Future<void> routeByRole() async {
+    final role = await FirestoreService.getCurrentUserRole();
+    if (role == 'admin') {
+      Get.offAll(() => const AdminShell());
+    } else {
+      Get.offAll(() => const MainShell());
+    }
+  }
+
+  // ==========================================
   // LOGIKA LOGOUT PENGGUNA
   // ==========================================
   Future<void> logoutUser() async {
@@ -124,7 +191,7 @@ class AuthController extends GetxController {
       Get.snackbar(
         title,
         message,
-        backgroundColor: color.withOpacity(0.9),
+        backgroundColor: color.withValues(alpha: 0.9),
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
         margin: const EdgeInsets.all(16),

@@ -1,9 +1,145 @@
-## Model Generator
-- Freezed
-- Json_Serializable
+# MabarKeun
 
-## State Management
-GetX
+Aplikasi mobile untuk mencari dan booking tempat gaming (warnet / rental PS), lengkap dengan
+panel admin per-warnet. Dibangun dengan **Flutter + Firebase**.
 
-## Architecture
-Clean Architecture
+---
+
+## Fitur
+
+### Untuk Gamer (user)
+- Cari warnet terdekat (peta + daftar), **search** per nama, dan **filter** (urutan + harga maks)
+- Lihat detail warnet: foto, jam buka, fasilitas, lokasi, harga, dan **ulasan**
+- Booking: pilih tanggal, jam (24 jam), durasi, **unit perangkat** (PC/Console + spek),
+  dan **metode pembayaran**
+- Ketersediaan unit **real-time** (unit yang sudah dibooking ditandai otomatis)
+- Riwayat booking: lihat detail, **batalkan**, atau **ubah jadwal (reschedule)**
+- Beri **rating & ulasan** ke warnet
+- Notifikasi dari aktivitas booking sendiri
+
+### Untuk Admin Warnet
+- Dashboard **booking masuk** + statistik (total booking, hari ini, pendapatan)
+- **Tandai booking selesai**
+- Kelola venue: buat / edit / hapus, atur harga, label, **lokasi (GPS)**,
+  **foto (upload galeri / URL)**, **jam buka**, **fasilitas**
+- Kelola **perangkat per-warnet**: tambah / edit / hapus unit (kode, nama, spek, tier, tipe)
+
+---
+
+## Akun Demo
+
+Login dengan akun di bawah (sudah di-seed ke project `mabar-slurd`):
+
+| Role | Email | Password | Keterangan |
+|------|-------|----------|------------|
+| Gamer | `gamer@mabarkeun.com` | `Gamer123` | Booking besok di tiap warnet (status: Berlangsung) |
+| Admin 1 | `admin@mabarkeun.com` | `Admin123` | Pemilik GG Arena Demo |
+| Admin 2 | `admin2@mabarkeun.com` | `Admin123` | Pemilik Nexus Esports |
+| Admin 3 | `admin3@mabarkeun.com` | `Admin123` | Pemilik CyberShop Hub |
+| User 1 | `gamer2@mabarkeun.com` | `Gamer123` | Rizky Pratama — punya booking selesai + ulasan |
+| User 2 | `gamer3@mabarkeun.com` | `Gamer123` | Budi Santoso — punya booking selesai + ulasan |
+| User 3 | `gamer4@mabarkeun.com` | `Gamer123` | Siti Aulia — punya booking selesai + ulasan |
+
+Tiap warnet di beranda dimiliki salah satu admin, lengkap dengan foto, jam buka, fasilitas,
+lokasi (Jakarta area), harga, dan 15 unit perangkat — semuanya bisa diedit admin masing-masing.
+
+**Dummy data yang sudah di-seed:**
+- 8 ulasan nyata tersebar di 3 venue (rating 4–5★)
+- Booking selesai (done) untuk gamer2/3/4 di semua venue → bisa langsung "Beri Ulasan"
+- Booking aktif hari ini (Rizky) + booking besok (gamer) → tampil di dashboard admin & riwayat
+
+**Alur coba lengkap:**
+1. Login admin → lihat dashboard booking masuk, statistik, tandai selesai
+2. Login gamer → booking baru → pilih metode pembayaran → simulasi pembayaran
+3. Login gamer2/3/4 → riwayat ada booking selesai → tekan "Beri Ulasan"
+
+> Bisa juga daftar akun baru lewat tombol **Daftar** (pilih tipe **Gamer** / **Admin Warnet**).
+
+---
+
+## Tech Stack
+
+- **Flutter** (Dart) + **GetX** — state management & routing
+- **Firebase** — Authentication, Cloud Firestore, Storage
+- **flutter_map** + OpenStreetMap, **geolocator** / **geocoding** — peta & lokasi
+- **image_picker** — pilih foto dari galeri
+- Arsitektur **feature-first**: `lib/src/feat/<fitur>/presentation/...`
+
+---
+
+## Menjalankan
+
+```bash
+flutter pub get
+flutter run
+```
+
+---
+
+## Setup Firebase
+
+### 1. Deploy Firestore Rules
+
+Rules sudah di-deploy ke project `mabar-slurd`. Jika perlu deploy ulang:
+
+```bash
+firebase deploy --only firestore:rules --project mabar-slurd
+```
+
+Atau manual: Console → Firestore Database → tab **Rules** →
+paste isi [firestore.rules](firestore.rules) → **Publish**
+
+### 2. Firebase Storage
+
+> **Catatan:** Storage membutuhkan **Blaze plan** (pay-as-you-go).
+> Project ini menggunakan Spark plan (gratis), sehingga fitur **upload foto baru**
+> (dari admin & edit profil) tidak aktif.
+> Foto venue tampil normal via URL Unsplash yang sudah di-seed.
+
+Jika ingin mengaktifkan upload foto: upgrade project ke Blaze → aktifkan Storage →
+deploy `storage.rules` via CLI:
+
+```bash
+firebase deploy --only storage --project mabar-slurd
+```
+
+### 3. Seed akun & data demo
+
+Butuh Node.js. Membuat 1 gamer + 3 admin beserta warnet & 15 unit perangkat tiap warnet
+(idempotent — aman dijalankan berulang):
+
+```bash
+node tool/seed_accounts.mjs
+```
+
+> Rules Firestore harus sudah di-deploy sebelum menjalankan seed agar role dan
+> data perangkat berhasil tersimpan.
+
+---
+
+## Model Data (Firestore)
+
+```
+users/{uid}
+  role            : "user" | "admin"
+  display_name, phone
+
+venues/{venueId}
+  name, price_per_hour, rating, badge, owner_uid
+  lat, lng, address, image_url, hours, facilities[]
+
+  computers/{id}    code, name, spec, tier, type (PC|Console)
+  reviews/{id}      user_id, user_name, rating, comment, created_at
+
+bookings/{id}
+  venue_id, venue_name, user_id, computer_id, device_type
+  start_time, end_time, duration_hours, total_price
+  payment_method, status (active|done|cancelled), created_at
+```
+
+### Role & Admin
+- **Role** disimpan di `users/{uid}.role`, dipilih saat registrasi.
+- Fallback: siapa pun yang memiliki venue (`owner_uid == uid`) dianggap **admin**.
+- Routing login: admin → `AdminShell`, user → `MainShell`.
+- Keamanan: admin hanya bisa mengelola venue, perangkat, & booking miliknya
+  (lihat [firestore.rules](firestore.rules)).

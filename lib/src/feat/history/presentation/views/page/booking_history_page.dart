@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
+import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_list_card.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
@@ -18,40 +19,21 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   static const List<String> _filters = [
     'Semua',
+    'Akan Datang',
     'Berlangsung',
     'Selesai',
     'Dibatalkan',
   ];
 
-  /// Tentukan status tampilan berdasarkan end_time dan status Firestore.
-  /// Jika status Firestore 'active' tapi end_time sudah lewat → otomatis 'Selesai'.
-  String _resolveStatus(String raw, DateTime endTime) {
+  /// Tentukan status tampilan berdasarkan start/end_time dan status Firestore.
+  String _resolveStatus(String raw, DateTime startTime, DateTime endTime) {
     if (raw == 'cancelled') return 'Dibatalkan';
     if (raw == 'done') return 'Selesai';
-    if (DateTime.now().isAfter(endTime)) return 'Selesai';
-    return 'Berlangsung';
+    final now = DateTime.now();
+    if (now.isAfter(endTime)) return 'Selesai';
+    if (now.isAfter(startTime)) return 'Berlangsung';
+    return 'Akan Datang';
   }
-
-  String _formatTanggal(DateTime date) {
-    const namaBulan = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    return '${date.day} ${namaBulan[date.month - 1]} ${date.year}';
-  }
-
-  String _formatJam(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -77,15 +59,23 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
             );
           }
 
-          final allData = snapshot.data ?? [];
+          final rawData = snapshot.data ?? [];
+
+          // Abaikan dokumen yang tidak punya waktu valid agar tidak crash.
+          final allData = rawData
+              .where((item) =>
+                  item['start_time'] is Timestamp &&
+                  item['end_time'] is Timestamp)
+              .toList();
 
           // Terapkan filter
           final filtered = _selectedFilter == 'Semua'
               ? allData
               : allData.where((item) {
                   final statusRaw = item['status'] as String? ?? 'active';
+                  final startTime = (item['start_time'] as Timestamp).toDate();
                   final endTime = (item['end_time'] as Timestamp).toDate();
-                  return _resolveStatus(statusRaw, endTime) == _selectedFilter;
+                  return _resolveStatus(statusRaw, startTime, endTime) == _selectedFilter;
                 }).toList();
 
           return SingleChildScrollView(
@@ -131,16 +121,23 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                             .toDate();
                         final statusLabel = _resolveStatus(
                           item['status'] as String? ?? 'active',
+                          startTime,
                           endTime,
                         );
 
+                        final computerId = item['computer_id'] as String?;
+                        final deviceType = item['device_type'] as String?;
+                        final subTitleText = (computerId != null && deviceType != null)
+                            ? '$computerId · $deviceType'
+                            : computerId ?? deviceType ?? '-';
+
                         return MabarListCard(
                           title: item['venue_name'] as String? ?? '-',
-                          subTitle: item['device_type'] as String? ?? '-',
-                          date: _formatTanggal(startTime),
+                          subTitle: subTitleText,
+                          date: Formatters.tanggal(startTime),
                           time:
-                              '${_formatJam(startTime)} - ${_formatJam(endTime)}',
-                          total: (item['total_price'] as num).toInt(),
+                              '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
+                          total: (item['total_price'] as num?)?.toInt() ?? 0,
                           status: statusLabel,
                           onTap: () => _goToDetail(
                             item,
@@ -174,11 +171,12 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           bookingId: item['id'] as String,
           title: item['venue_name'] as String? ?? '-',
           subTitle: item['device_type'] as String? ?? '-',
-          date: _formatTanggal(startTime),
-          time: '${_formatJam(startTime)} - ${_formatJam(endTime)}',
-          total: (item['total_price'] as num).toInt(),
+          date: Formatters.tanggal(startTime),
+          time: '${Formatters.jam(startTime)} - ${Formatters.jam(endTime)}',
+          total: (item['total_price'] as num?)?.toInt() ?? 0,
           status: statusLabel,
           durationHours: (item['duration_hours'] as num?)?.toInt() ?? 1,
+          data: item,
         ),
       ),
     );

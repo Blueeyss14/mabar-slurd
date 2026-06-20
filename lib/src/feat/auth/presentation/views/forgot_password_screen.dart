@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:mabar_slurd/src/feat/auth/presentation/controllers/auth_controller.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_text_field.dart';
 
@@ -10,6 +12,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final AuthController authController = Get.put(AuthController());
   final TextEditingController _emailController = TextEditingController();
 
   @override
@@ -18,20 +21,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _kirimTautan() {
+  Future<void> _kirimTautan() async {
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Tautan reset kata sandi sudah dikirim ke email kamu',
-          style: TextStyle(
-            color: CustomColors.mabarTextPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: CustomColors.mabarPurpleBg,
-      ),
-    );
+    final sukses = await authController.resetPassword(_emailController.text);
+    if (sukses && mounted) Navigator.pop(context);
   }
 
   @override
@@ -106,24 +99,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: CustomColors.mabarPurpleLight,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            Obx(
+              () => SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: CustomColors.mabarPurpleLight,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                ),
-                onPressed: _kirimTautan,
-                child: const Text(
-                  "KIRIM TAUTAN",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  onPressed: authController.isLoading.value ? null : _kirimTautan,
+                  child: authController.isLoading.value
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          "KIRIM TAUTAN",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),

@@ -8,6 +8,9 @@ class MabarImageCard extends StatelessWidget {
   final double distance;
   final int price;
   final String? badge;
+  final String? imageUrl;
+  final String? hours;
+  final List<String> facilities;
   final void Function()? onTap;
 
   const MabarImageCard({
@@ -17,8 +20,33 @@ class MabarImageCard extends StatelessWidget {
     this.distance = 0.8,
     this.price = 15,
     this.badge,
+    this.imageUrl,
+    this.hours,
+    this.facilities = const [],
     this.onTap,
   });
+
+  IconData _facilityIcon(String f) {
+    switch (f.toLowerCase()) {
+      case 'ac':
+        return Icons.ac_unit;
+      case 'wifi':
+        return Icons.wifi;
+      case 'toilet':
+        return Icons.wc;
+      case 'kantin':
+      case 'snack':
+        return Icons.restaurant;
+      case 'parkir':
+        return Icons.local_parking;
+      case 'mushola':
+        return Icons.mosque;
+      case 'smoking area':
+        return Icons.smoking_rooms;
+      default:
+        return Icons.check_circle_outline;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +75,19 @@ class MabarImageCard extends StatelessWidget {
                 SizedBox(
                   height: 150,
                   width: double.infinity,
-                  child: Image.asset(AssetImages.gaming, fit: BoxFit.cover),
+                  child: (imageUrl != null && imageUrl!.isNotEmpty)
+                      ? Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Image.asset(AssetImages.gaming, fit: BoxFit.cover),
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                                  ? child
+                                  : Image.asset(AssetImages.gaming,
+                                      fit: BoxFit.cover),
+                        )
+                      : Image.asset(AssetImages.gaming, fit: BoxFit.cover),
                 ),
                 Positioned.fill(
                   child: DecoratedBox(
@@ -151,37 +191,41 @@ class MabarImageCard extends StatelessWidget {
                           color: CustomColors.mabarTextSecondary,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: CustomColors.mabarGreenBg,
-                        ),
-                        child: const Text(
-                          "Buka",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: CustomColors.mabarGreen,
+                      if (hours != null && hours!.isNotEmpty) ...[
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: CustomColors.mabarGreenBg,
+                          ),
+                          child: Text(
+                            hours!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: CustomColors.mabarGreen,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildFacility(Icons.computer, "PC"),
-                      const SizedBox(width: 8),
-                      _buildFacility(Icons.ac_unit, "AC"),
-                      const SizedBox(width: 8),
-                      _buildFacility(Icons.wifi, "WiFi"),
-                    ],
-                  ),
+                  if (facilities.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: facilities
+                          .take(3)
+                          .map((f) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: _buildFacility(_facilityIcon(f), f),
+                              ))
+                          .toList(),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   const Divider(
                     height: 1,

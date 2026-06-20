@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mabar_slurd/src/core/formatters.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 
 class MabarListCard extends StatelessWidget {
@@ -106,7 +107,7 @@ class MabarListCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Rp ${_formatRupiah((total ?? 0) * 1000)}',
+                  'Rp ${Formatters.rupiah((total ?? 0) * 1000)}',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -143,18 +144,6 @@ class MabarListCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatRupiah(int value) {
-    final digits = value.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(digits[i]);
-    }
-    return buffer.toString();
   }
 
   Widget _buildStatusBadge() {
