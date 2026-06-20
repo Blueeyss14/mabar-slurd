@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/core/formatters.dart';
+import 'package:mabar_slurd/src/core/notification_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
 
@@ -84,7 +86,7 @@ class BookingHistoryDetailPage extends StatelessWidget {
             _buildDetailCard(),
             const SizedBox(height: 16),
             _buildPaymentCard(harga),
-            if (status == 'Berlangsung') ...[
+            if (status == 'Akan Datang' || status == 'Berlangsung') ...[
               const SizedBox(height: 16),
               _buildRescheduleButton(context),
               const SizedBox(height: 12),
@@ -332,6 +334,8 @@ class BookingHistoryDetailPage extends StatelessWidget {
 
     DateTime? newDate;
     int? newHour;
+    String? errorMsg;
+    bool submitting = false;
 
     showModalBottomSheet(
       context: context,
@@ -385,7 +389,12 @@ class BookingHistoryDetailPage extends StatelessWidget {
                         firstDate: now,
                         lastDate: now.add(const Duration(days: 30)),
                       );
-                      if (picked != null) setSheet(() => newDate = picked);
+                      if (picked != null) {
+                        setSheet(() {
+                          newDate = picked;
+                          errorMsg = null;
+                        });
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -428,7 +437,10 @@ class BookingHistoryDetailPage extends StatelessWidget {
                       final hour = int.parse(jam.split(':')[0]);
                       final sel = newHour == hour;
                       return GestureDetector(
-                        onTap: () => setSheet(() => newHour = hour),
+                        onTap: () => setSheet(() {
+                          newHour = hour;
+                          errorMsg = null;
+                        }),
                         child: Container(
                           width: 52,
                           padding: const EdgeInsets.symmetric(vertical: 9),
@@ -455,6 +467,37 @@ class BookingHistoryDetailPage extends StatelessWidget {
                       );
                     }),
                   ),
+                  if (errorMsg != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade900.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: Colors.redAccent.withValues(alpha: 0.6)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              errorMsg!,
+                              style: const TextStyle(
+                                color: CustomColors.mabarTextPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
@@ -462,17 +505,121 @@ class BookingHistoryDetailPage extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: CustomColors.mabarBorderFocus,
+                        disabledBackgroundColor: CustomColors.mabarBorderFocus
+                            .withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: () =>
-                          _submitReschedule(context, sheetCtx, venueId,
-                              computerId, newDate, newHour),
-                      child: const Text('Simpan Jadwal Baru',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15)),
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              // Semua pesan validasi/gagal tampil DI DALAM popup.
+                              if (newDate == null && newHour == null) {
+                                setSheet(() => errorMsg =
+                                    'Pilih tanggal dan jam mulai baru dulu ya.');
+                                return;
+                              }
+                              if (newDate == null) {
+                                setSheet(() => errorMsg =
+                                    'Tanggal baru belum dipilih.');
+                                return;
+                              }
+                              if (newHour == null) {
+                                setSheet(() => errorMsg =
+                                    'Jam mulai baru belum dipilih.');
+                                return;
+                              }
+                              final start = DateTime(newDate!.year,
+                                  newDate!.month, newDate!.day, newHour!);
+                              if (start.isBefore(DateTime.now())) {
+                                setSheet(() => errorMsg =
+                                    'Waktu itu sudah lewat. Pilih jam yang akan datang ya.');
+                                return;
+                              }
+                              final oldStart =
+                                  (data['start_time'] as Timestamp?)?.toDate();
+                              if (oldStart != null &&
+                                  oldStart.year == start.year &&
+                                  oldStart.month == start.month &&
+                                  oldStart.day == start.day &&
+                                  oldStart.hour == start.hour) {
+                                setSheet(() => errorMsg =
+                                    'Jadwal baru sama dengan yang sekarang. Pilih waktu lain.');
+                                return;
+                              }
+
+                              final end =
+                                  start.add(Duration(hours: durationHours));
+                              // Tangkap messenger/navigator sebelum await.
+                              final messenger = ScaffoldMessenger.of(context);
+                              final navigator = Navigator.of(context);
+
+                              setSheet(() {
+                                submitting = true;
+                                errorMsg = null;
+                              });
+
+                              final ok =
+                                  await FirestoreService.rescheduleBooking(
+                                bookingId: bookingId,
+                                venueId: venueId,
+                                computerId: computerId,
+                                startTime: start,
+                                endTime: end,
+                                durationHours: durationHours,
+                                totalPrice: total,
+                              );
+
+                              if (!sheetCtx.mounted) return;
+
+                              if (!ok) {
+                                // GAGAL → popup tetap terbuka, error di dalamnya.
+                                setSheet(() {
+                                  submitting = false;
+                                  errorMsg =
+                                      'Perangkat sudah dibooking di waktu itu. Pilih waktu lain.';
+                                });
+                                return;
+                              }
+
+                              // SUKSES → notif, tutup popup, kembali, snackbar halaman.
+                              NotificationService.showNotification(
+                                title: 'Jadwal Diperbarui',
+                                body:
+                                    '$title — jadwal baru ${Formatters.tanggal(start)}, ${Formatters.jam(start)}.',
+                              );
+                              NotificationService.scheduleBookingReminder(
+                                bookingId: bookingId,
+                                venueName: title,
+                                startTime: start,
+                              );
+
+                              Navigator.pop(sheetCtx);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Jadwal berhasil diubah.',
+                                    style: TextStyle(
+                                        color: CustomColors.mabarTextPrimary,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: CustomColors.mabarPurpleBg,
+                                ),
+                              );
+                              navigator.pop();
+                            },
+                      child: submitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Simpan Jadwal Baru',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15)),
                     ),
                   ),
                 ],
@@ -482,58 +629,6 @@ class BookingHistoryDetailPage extends StatelessWidget {
         );
       },
     );
-  }
-
-  Future<void> _submitReschedule(
-    BuildContext pageCtx,
-    BuildContext sheetCtx,
-    String venueId,
-    String computerId,
-    DateTime? newDate,
-    int? newHour,
-  ) async {
-    final messenger = ScaffoldMessenger.of(pageCtx);
-    if (newDate == null || newHour == null) {
-      ScaffoldMessenger.of(sheetCtx).showSnackBar(
-        const SnackBar(content: Text('Pilih tanggal & jam dulu.')),
-      );
-      return;
-    }
-    final start =
-        DateTime(newDate.year, newDate.month, newDate.day, newHour);
-    if (start.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(sheetCtx).showSnackBar(
-        const SnackBar(content: Text('Tidak bisa pilih waktu yang sudah lewat.')),
-      );
-      return;
-    }
-    final end = start.add(Duration(hours: durationHours));
-    final navigator = Navigator.of(pageCtx);
-    Navigator.pop(sheetCtx);
-
-    final ok = await FirestoreService.rescheduleBooking(
-      bookingId: bookingId,
-      venueId: venueId,
-      computerId: computerId,
-      startTime: start,
-      endTime: end,
-      durationHours: durationHours,
-      totalPrice: total,
-    );
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? 'Jadwal berhasil diubah.'
-              : 'Gagal: perangkat sudah dibooking di waktu itu.',
-          style: const TextStyle(
-              color: CustomColors.mabarTextPrimary,
-              fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: ok ? CustomColors.mabarPurpleBg : Colors.red.shade800,
-      ),
-    );
-    if (ok) navigator.pop();
   }
 
   Widget _buildCancelButton(BuildContext context) {
@@ -595,6 +690,13 @@ class BookingHistoryDetailPage extends StatelessWidget {
                 final messenger = ScaffoldMessenger.of(context);
                 final navigator = Navigator.of(context);
                 final ok = await FirestoreService.cancelBooking(bookingId);
+                if (ok) {
+                  NotificationService.showNotification(
+                    title: 'Booking Dibatalkan',
+                    body: '$title — booking kamu sudah dibatalkan.',
+                  );
+                  NotificationService.cancelReminder(bookingId);
+                }
                 messenger.showSnackBar(
                   SnackBar(
                     content: Text(

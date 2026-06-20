@@ -1,8 +1,63 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Penanda internal bahwa slot sudah terkunci di tengah transaksi.
+class _SlotTaken implements Exception {}
+
 class FirestoreService {
   static final _db = FirebaseFirestore.instance;
+
+  /// Daftar id "slot-lock" per jam untuk sebuah perangkat di rentang waktu.
+  ///
+  /// Tiap jam dipetakan ke satu dokumen kunci dengan id deterministik
+  /// `{computerId}_{yyyyMMddHH}`. Karena id-nya tetap, dua transaksi yang
+  /// mengincar jam yang sama akan menulis dokumen yang sama → Firestore
+  /// menjamin hanya satu yang berhasil (anti-race sungguhan).
+  static List<String> _hourlySlotIds(
+    String computerId,
+    DateTime start,
+    DateTime end,
+  ) {
+    final ids = <String>[];
+    var cur = DateTime(start.year, start.month, start.day, start.hour);
+    while (cur.isBefore(end)) {
+      final stamp = '${cur.year.toString().padLeft(4, '0')}'
+          '${cur.month.toString().padLeft(2, '0')}'
+          '${cur.day.toString().padLeft(2, '0')}'
+          '${cur.hour.toString().padLeft(2, '0')}';
+      ids.add('${computerId}_$stamp');
+      cur = cur.add(const Duration(hours: 1));
+    }
+    return ids;
+  }
+
+  /// Lepas (hapus) semua slot-lock milik sebuah booking. Best-effort:
+  /// kalau gagal (mis. rules belum deploy / kunci tak ada) diabaikan saja,
+  /// sehingga tidak menggagalkan pembatalan / penandaan selesai.
+  static Future<void> _releaseSlots(Map<String, dynamic> data) async {
+    final venueId = data['venue_id'] as String?;
+    final computerId = data['computer_id'] as String?;
+    final start = data['start_time'];
+    final end = data['end_time'];
+    if (venueId == null ||
+        computerId == null ||
+        start is! Timestamp ||
+        end is! Timestamp) {
+      return;
+    }
+    try {
+      final locksCol =
+          _db.collection('venues').doc(venueId).collection('slot_locks');
+      final batch = _db.batch();
+      for (final id
+          in _hourlySlotIds(computerId, start.toDate(), end.toDate())) {
+        batch.delete(locksCol.doc(id));
+      }
+      await batch.commit();
+    } catch (_) {
+      // diabaikan
+    }
+  }
 
   static Stream<List<Map<String, dynamic>>> getVenues() {
     return _db
@@ -29,7 +84,7 @@ class FirestoreService {
           .where('status', isEqualTo: 'active')
           .get();
 
-      return snapshot.docs
+      final result = snapshot.docs
           .where((doc) {
             final data = doc.data();
             if (data['computer_id'] == null) return false;
@@ -43,21 +98,23 @@ class FirestoreService {
           })
           .map((doc) => doc.data()['computer_id'] as String)
           .toSet();
+      return result;
     } catch (_) {
       return <String>{};
     }
   }
 
-  /// Buat booking baru. Ketersediaan slot dicek tepat sebelum menulis.
+  /// Buat booking baru secara atomik dengan model "slot-lock".
   ///
-  /// Catatan: pengecekan ini memakai query koleksi (lihat [getBookedComputers]),
-  /// sehingga TIDAK bisa dibungkus Firestore transaction (transaction hanya
-  /// boleh membaca dokumen tunggal, bukan menjalankan query). Akibatnya masih
-  /// ada jendela race yang sangat kecil bila dua user memesan slot yang sama
-  /// pada saat bersamaan. Untuk skala aplikasi ini, risiko itu dapat diterima.
-  /// Solusi anti-race penuh memerlukan model "slot-lock" (satu dokumen kunci
-  /// per jam per venue) yang diubah secara atomik di dalam transaction.
-  /// Buat booking baru. Return bookingId jika berhasil, null jika slot bentrok.
+  /// Anti-race: tiap jam yang dipesan dikunci lewat satu dokumen
+  /// `venues/{venueId}/slot_locks/{computerId}_{jam}` di dalam Firestore
+  /// transaction. Karena id kunci deterministik, dua user yang memesan slot
+  /// sama bersamaan tidak bisa dua-duanya berhasil — transaction yang kalah
+  /// akan retry, melihat kunci sudah ada, lalu gagal (return null).
+  ///
+  /// Pre-check [getBookedComputers] tetap dijalankan agar booking lama yang
+  /// belum punya slot-lock (mis. data seed) tetap dihormati.
+  /// Return bookingId jika berhasil, null jika slot bentrok / gagal.
   static Future<String?> createBooking({
     required String venueId,
     required String venueName,
@@ -69,13 +126,19 @@ class FirestoreService {
     required String computerId,
     String paymentMethod = 'Bayar di Tempat',
   }) async {
+    // Pre-check kompatibilitas untuk booking lama tanpa slot-lock.
     final booked = await getBookedComputers(venueId, startTime, endTime);
     if (booked.contains(computerId)) return null;
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     final isPaidOnCreation = paymentMethod == 'Bayar di Tempat';
 
-    final ref = await _db.collection('bookings').add({
+    final locksCol =
+        _db.collection('venues').doc(venueId).collection('slot_locks');
+    final bookingRef = _db.collection('bookings').doc();
+    final slotIds = _hourlySlotIds(computerId, startTime, endTime);
+
+    final bookingData = <String, dynamic>{
       'venue_id': venueId,
       'venue_name': venueName,
       'user_id': userId,
@@ -89,9 +152,42 @@ class FirestoreService {
       'payment_status': isPaidOnCreation ? 'paid' : 'pending',
       'status': 'active',
       'created_at': FieldValue.serverTimestamp(),
-    });
+    };
 
-    return ref.id;
+    try {
+      await _db.runTransaction((tx) async {
+        // Semua READ harus mendahului semua WRITE dalam satu transaction.
+        for (final id in slotIds) {
+          final snap = await tx.get(locksCol.doc(id));
+          if (snap.exists) throw _SlotTaken();
+        }
+        // Kunci tiap jam + tulis dokumen booking secara atomik.
+        for (final id in slotIds) {
+          tx.set(locksCol.doc(id), {
+            'booking_id': bookingRef.id,
+            'computer_id': computerId,
+            'user_id': userId,
+            'start_time': Timestamp.fromDate(startTime),
+            'end_time': Timestamp.fromDate(endTime),
+          });
+        }
+        tx.set(bookingRef, bookingData);
+      });
+      return bookingRef.id;
+    } on _SlotTaken {
+      // Bentrok beneran: slot sudah dikunci user lain.
+      return null;
+    } catch (_) {
+      // Transaksi slot-lock gagal karena alasan lain (mis. security rules
+      // slot_locks belum di-deploy). Jangan blokir user: fallback ke tulis
+      // booking langsung (tanpa kunci, jendela race kecil seperti versi lama).
+      try {
+        await bookingRef.set(bookingData);
+        return bookingRef.id;
+      } catch (_) {
+        return null;
+      }
+    }
   }
 
   static Future<void> markPaymentPaid(String bookingId) async {
@@ -101,8 +197,12 @@ class FirestoreService {
         .update({'payment_status': 'paid'});
   }
 
-  /// Ubah jadwal booking (reschedule). Cek bentrok komputer di waktu baru,
-  /// kecualikan booking ini sendiri. Hanya pemilik booking (dijaga rules).
+  /// Ubah jadwal booking (reschedule) secara atomik.
+  ///
+  /// Slot-lock lama dilepas dan slot baru dikunci di dalam satu transaction,
+  /// dengan mengecualikan kunci milik booking ini sendiri. Pre-check query
+  /// tetap dijalankan untuk menghormati booking lama tanpa slot-lock.
+  /// Hanya pemilik booking (dijaga rules).
   static Future<bool> rescheduleBooking({
     required String bookingId,
     required String venueId,
@@ -112,13 +212,16 @@ class FirestoreService {
     required int durationHours,
     required int totalPrice,
   }) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return false;
+
     try {
+      // Pre-check kompatibilitas: bentrok dengan booking lain (abaikan diri).
       final snapshot = await _db
           .collection('bookings')
           .where('venue_id', isEqualTo: venueId)
           .where('status', isEqualTo: 'active')
           .get();
-
       final bentrok = snapshot.docs.any((doc) {
         if (doc.id == bookingId) return false; // abaikan diri sendiri
         final data = doc.data();
@@ -132,25 +235,78 @@ class FirestoreService {
       });
       if (bentrok) return false;
 
-      await _db.collection('bookings').doc(bookingId).update({
+      final bookingRef = _db.collection('bookings').doc(bookingId);
+      final locksCol =
+          _db.collection('venues').doc(venueId).collection('slot_locks');
+      final newSlotIds = _hourlySlotIds(computerId, startTime, endTime);
+
+      final updateData = <String, dynamic>{
         'start_time': Timestamp.fromDate(startTime),
         'end_time': Timestamp.fromDate(endTime),
         'duration_hours': durationHours,
         'total_price': totalPrice,
-      });
-      return true;
+        'computer_id': computerId,
+      };
+
+      try {
+        await _db.runTransaction((tx) async {
+          // READS dulu.
+          final bookingSnap = await tx.get(bookingRef);
+          if (!bookingSnap.exists) throw _SlotTaken();
+          final data = bookingSnap.data() as Map<String, dynamic>;
+          final oldStart = (data['start_time'] as Timestamp?)?.toDate();
+          final oldEnd = (data['end_time'] as Timestamp?)?.toDate();
+          final oldComputerId = data['computer_id'] as String? ?? computerId;
+
+          for (final id in newSlotIds) {
+            final snap = await tx.get(locksCol.doc(id));
+            if (snap.exists) {
+              final owner =
+                  (snap.data() as Map<String, dynamic>)['booking_id'];
+              if (owner != bookingId) throw _SlotTaken();
+            }
+          }
+
+          // WRITES: lepas kunci lama, pasang kunci baru, perbarui booking.
+          if (oldStart != null && oldEnd != null) {
+            for (final id
+                in _hourlySlotIds(oldComputerId, oldStart, oldEnd)) {
+              tx.delete(locksCol.doc(id));
+            }
+          }
+          for (final id in newSlotIds) {
+            tx.set(locksCol.doc(id), {
+              'booking_id': bookingId,
+              'computer_id': computerId,
+              'user_id': userId,
+              'start_time': Timestamp.fromDate(startTime),
+              'end_time': Timestamp.fromDate(endTime),
+            });
+          }
+          tx.update(bookingRef, updateData);
+        });
+        return true;
+      } on _SlotTaken {
+        // Bentrok beneran dengan slot user lain.
+        return false;
+      } catch (_) {
+        // Slot-lock tak bisa diakses (mis. rules belum deploy). Pre-check di
+        // atas sudah memastikan tak bentrok, jadi lanjut update biasa.
+        await bookingRef.update(updateData);
+        return true;
+      }
     } catch (_) {
       return false;
     }
   }
 
   /// Ambil riwayat booking milik user yang sedang login,
-  /// diurutkan dari yang terbaru.
+  /// diurutkan berdasarkan waktu sesi (start_time) — terbaru/akan datang dulu.
   ///
-  /// Catatan: sengaja TIDAK memakai orderBy('created_at') di server agar tidak
-  /// membutuhkan composite index Firestore, dan agar booking yang baru dibuat
-  /// (created_at serverTimestamp sempat null sesaat) tetap langsung muncul.
-  /// Pengurutan dilakukan di sisi klien.
+  /// Catatan: sengaja TIDAK memakai orderBy di server agar tidak membutuhkan
+  /// composite index Firestore, dan agar booking yang baru dibuat (created_at
+  /// serverTimestamp sempat null sesaat) tetap langsung muncul. Pengurutan
+  /// dilakukan di sisi klien.
   static Stream<List<Map<String, dynamic>>> getBookingHistory() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return const Stream.empty();
@@ -164,12 +320,19 @@ class FirestoreService {
               .map((doc) => {'id': doc.id, ...doc.data()})
               .toList();
           list.sort((a, b) {
-            final aTime = (a['created_at'] as Timestamp?)?.toDate();
-            final bTime = (b['created_at'] as Timestamp?)?.toDate();
-            if (aTime == null && bTime == null) return 0;
-            if (aTime == null) return -1; // baru dibuat → paling atas
-            if (bTime == null) return 1;
-            return bTime.compareTo(aTime); // terbaru dulu
+            // Utama: urutkan dari waktu sesi terbaru/akan datang ke yang lama.
+            final aStart = (a['start_time'] as Timestamp?)?.toDate();
+            final bStart = (b['start_time'] as Timestamp?)?.toDate();
+            if (aStart != null && bStart != null && aStart != bStart) {
+              return bStart.compareTo(aStart);
+            }
+            // Penyeimbang: kalau waktu sesi sama/null, pakai waktu dibuat.
+            final aCreated = (a['created_at'] as Timestamp?)?.toDate();
+            final bCreated = (b['created_at'] as Timestamp?)?.toDate();
+            if (aCreated == null && bCreated == null) return 0;
+            if (aCreated == null) return -1; // baru dibuat → paling atas
+            if (bCreated == null) return 1;
+            return bCreated.compareTo(aCreated);
           });
           return list;
         });
@@ -199,31 +362,36 @@ class FirestoreService {
   }
 
   /// Tandai booking sebagai selesai (dipakai admin venue).
+  /// Sekalian melepas slot-lock agar jam tersebut bebas lagi.
   static Future<bool> markBookingDone(String bookingId) async {
     try {
-      await _db
-          .collection('bookings')
-          .doc(bookingId)
-          .update({'status': 'done'});
+      final docRef = _db.collection('bookings').doc(bookingId);
+      final snapshot = await docRef.get();
+      if (!snapshot.exists) return false;
+
+      await docRef.update({'status': 'done'});
+      await _releaseSlots(snapshot.data()!); // best-effort
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  /// Batalkan booking: ubah status menjadi 'cancelled'.
+  /// Batalkan booking: ubah status menjadi 'cancelled' dan lepas slot-lock.
   /// Hanya boleh untuk booking milik user yang sedang login.
   static Future<bool> cancelBooking(String bookingId) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return false;
 
     try {
-      final doc = _db.collection('bookings').doc(bookingId);
-      final snapshot = await doc.get();
+      final docRef = _db.collection('bookings').doc(bookingId);
+      final snapshot = await docRef.get();
       if (!snapshot.exists) return false;
-      if (snapshot.data()?['user_id'] != userId) return false;
+      final data = snapshot.data();
+      if (data?['user_id'] != userId) return false;
 
-      await doc.update({'status': 'cancelled'});
+      await docRef.update({'status': 'cancelled'});
+      await _releaseSlots(data!); // best-effort
       return true;
     } catch (_) {
       return false;
