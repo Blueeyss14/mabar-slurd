@@ -25,13 +25,15 @@ const IMG = {
 };
 
 // Daftar admin + warnet dummy.
+// Semua venue dummy berlokasi di sekitar Telkom University, Bandung.
+// Telkom University: Jl. Telekomunikasi No. 1, Terusan Buah Batu, Dayeuhkolot
 const ADMINS = [
   {
     email: 'admin@mabarkeun.com', pass: 'Admin123', name: 'Admin GG Arena',
     venue: {
       name: 'GG Arena Demo', price: 15, rating: 4.8, badge: 'Populer',
-      lat: -6.200000, lng: 106.816666,
-      address: 'Jl. Sudirman No. 1, Jakarta Pusat',
+      lat: -6.974200, lng: 107.630100,
+      address: 'Jl. Buah Batu No. 5, Dayeuhkolot, Bandung',
       image: IMG.gg, hours: '10:00 - 24:00',
       facilities: ['AC', 'WiFi', 'Toilet', 'Kantin', 'Parkir'],
     },
@@ -40,8 +42,8 @@ const ADMINS = [
     email: 'admin2@mabarkeun.com', pass: 'Admin123', name: 'Admin Nexus',
     venue: {
       name: 'Nexus Esports', price: 20, rating: 4.6, badge: null,
-      lat: -6.214600, lng: 106.845100,
-      address: 'Jl. Gatot Subroto, Jakarta Selatan',
+      lat: -6.979800, lng: 107.633500,
+      address: 'Jl. Bojongsoang No. 20, Dayeuhkolot, Bandung',
       image: IMG.nexus, hours: '09:00 - 23:00',
       facilities: ['AC', 'WiFi', 'Snack', 'Smoking Area'],
     },
@@ -50,8 +52,8 @@ const ADMINS = [
     email: 'admin3@mabarkeun.com', pass: 'Admin123', name: 'Admin CyberShop',
     venue: {
       name: 'CyberShop Hub', price: 25, rating: 4.9, badge: 'Baru',
-      lat: -6.175110, lng: 106.865036,
-      address: 'Jl. M.H. Thamrin, Jakarta Pusat',
+      lat: -6.971000, lng: 107.631200,
+      address: 'Jl. Terusan Buah Batu No. 8, Dayeuhkolot, Bandung',
       image: IMG.cyber, hours: '24 Jam',
       facilities: ['AC', 'WiFi', 'Toilet', 'Kantin', 'Parkir', 'Mushola'],
     },
