@@ -206,6 +206,13 @@ class BookingHistoryDetailPage extends StatelessWidget {
   }
 
   Widget _buildPaymentCard(int harga) {
+    final paymentStatus = data['payment_status'] as String? ?? 'paid';
+    final isPaid = paymentStatus == 'paid';
+    final payBadgeColor = isPaid ? CustomColors.mabarGreen : Colors.orange;
+    final payBadgeLabel = isPaid ? 'Lunas' : 'Belum Dibayar';
+    final payBadgeIcon =
+        isPaid ? Icons.check_circle_outline : Icons.timer_outlined;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -216,6 +223,40 @@ class BookingHistoryDetailPage extends StatelessWidget {
         children: [
           _buildPaymentRow(
               "Metode", data['payment_method'] as String? ?? 'Bayar di Tempat'),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Status Bayar",
+                style: TextStyle(
+                    fontSize: 15, color: CustomColors.mabarTextSecondary),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: payBadgeColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(payBadgeIcon, size: 13, color: payBadgeColor),
+                    const SizedBox(width: 5),
+                    Text(
+                      payBadgeLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: payBadgeColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           _buildPaymentRow("Harga Sewa", "Rp ${Formatters.rupiah(harga)}"),
           const SizedBox(height: 14),

@@ -367,6 +367,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           const SizedBox(height: 4),
           _infoRow(Icons.payments_outlined,
               'Rp ${Formatters.rupiah(((b['total_price'] as num?)?.toInt() ?? 0) * 1000)}'),
+          const SizedBox(height: 4),
+          _paymentStatusRow(b['payment_status'] as String? ?? 'paid'),
           if (canMarkDone) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -409,6 +411,27 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           style: const TextStyle(
             fontSize: 13,
             color: CustomColors.mabarTextSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _paymentStatusRow(String paymentStatus) {
+    final isPaid = paymentStatus == 'paid';
+    final color = isPaid ? CustomColors.mabarGreen : Colors.orange;
+    final label = isPaid ? 'Lunas' : 'Belum Dibayar';
+    final icon = isPaid ? Icons.check_circle_outline : Icons.timer_outlined;
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 7),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
       ],

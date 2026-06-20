@@ -57,7 +57,8 @@ class FirestoreService {
   /// pada saat bersamaan. Untuk skala aplikasi ini, risiko itu dapat diterima.
   /// Solusi anti-race penuh memerlukan model "slot-lock" (satu dokumen kunci
   /// per jam per venue) yang diubah secara atomik di dalam transaction.
-  static Future<bool> createBooking({
+  /// Buat booking baru. Return bookingId jika berhasil, null jika slot bentrok.
+  static Future<String?> createBooking({
     required String venueId,
     required String venueName,
     required DateTime startTime,
@@ -68,13 +69,13 @@ class FirestoreService {
     required String computerId,
     String paymentMethod = 'Bayar di Tempat',
   }) async {
-    // Pastikan komputer yang dipilih belum dibooking di rentang waktu ini.
     final booked = await getBookedComputers(venueId, startTime, endTime);
-    if (booked.contains(computerId)) return false;
+    if (booked.contains(computerId)) return null;
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    final isPaidOnCreation = paymentMethod == 'Bayar di Tempat';
 
-    await _db.collection('bookings').add({
+    final ref = await _db.collection('bookings').add({
       'venue_id': venueId,
       'venue_name': venueName,
       'user_id': userId,
@@ -85,11 +86,19 @@ class FirestoreService {
       'computer_id': computerId,
       'total_price': totalPrice,
       'payment_method': paymentMethod,
+      'payment_status': isPaidOnCreation ? 'paid' : 'pending',
       'status': 'active',
       'created_at': FieldValue.serverTimestamp(),
     });
 
-    return true;
+    return ref.id;
+  }
+
+  static Future<void> markPaymentPaid(String bookingId) async {
+    await _db
+        .collection('bookings')
+        .doc(bookingId)
+        .update({'payment_status': 'paid'});
   }
 
   /// Ubah jadwal booking (reschedule). Cek bentrok komputer di waktu baru,
