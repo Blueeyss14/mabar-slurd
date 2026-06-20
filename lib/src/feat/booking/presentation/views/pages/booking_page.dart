@@ -6,6 +6,7 @@ import 'package:mabar_slurd/src/res/assets.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/buttons/mabar_button.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/views/components/calendar_pop.dart';
+import 'package:mabar_slurd/src/feat/booking/presentation/views/pages/payment_simulation_page.dart';
 import 'package:mabar_slurd/src/feat/booking/presentation/widgets/pilih_jam.dart';
 import 'package:get/get.dart';
 import 'package:mabar_slurd/src/feat/common/presentation/views/main_shell.dart';
@@ -185,9 +186,9 @@ class _BookingPageState extends State<BookingPage> {
     setState(() => _isLoading = true);
 
     final komputer = _computers[selectedKomputer!];
-    bool success = false;
+    String? bookingId;
     try {
-      success = await FirestoreService.createBooking(
+      bookingId = await FirestoreService.createBooking(
         venueId: widget.venue['id'] as String,
         venueName: widget.venue['name'] as String? ?? '-',
         startTime: _startTime!,
@@ -207,25 +208,39 @@ class _BookingPageState extends State<BookingPage> {
     if (!mounted) return;
 
     try {
-      if (success) {
+      if (bookingId != null) {
         NotificationService.showNotification(
           title: 'Booking Berhasil!',
           body: 'Tempat kamu sudah aman. Cek detailnya di menu Riwayat.',
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Pesanan berhasil dibuat!',
-              style: TextStyle(
-                color: CustomColors.mabarTextPrimary,
-                fontWeight: FontWeight.bold,
+        if (_paymentMethod == 'Bayar di Tempat') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Pesanan berhasil dibuat!',
+                style: TextStyle(
+                  color: CustomColors.mabarTextPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: CustomColors.mabarPurpleBg,
+            ),
+          );
+          Get.offAll(() => const MainShell(initialIndex: 1));
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PaymentSimulationPage(
+                bookingId: bookingId!,
+                amount: _totalPrice * 1000,
+                paymentMethod: _paymentMethod,
+                venueName: widget.venue['name'] as String? ?? '-',
               ),
             ),
-            backgroundColor: CustomColors.mabarPurpleBg,
-          ),
-        );
-        Get.offAll(() => const MainShell(initialIndex: 1));
+          );
+        }
       } else {
         _showError('Maaf, perangkat sudah dibooking di waktu tersebut!');
       }
