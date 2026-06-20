@@ -68,30 +68,42 @@ flutter run
 
 ## Setup Firebase
 
-Sebagian fitur menulis ke Firestore/Storage, jadi rules perlu di-deploy sekali oleh
-pemilik project. Paling mudah lewat **Firebase Console**:
+### 1. Deploy Firestore Rules
 
-1. **Firestore Rules** — Console → Firestore Database → tab **Rules** →
-   paste isi [firestore.rules](firestore.rules) → **Publish**
-2. **Aktifkan Storage** — Console → Build → **Storage** → Get started →
-   tab **Rules** → paste isi [storage.rules](storage.rules) → **Publish**
-
-Atau via CLI (perlu `firebase login`):
+Rules sudah di-deploy ke project `mabar-slurd`. Jika perlu deploy ulang:
 
 ```bash
-firebase deploy --only firestore:rules,storage
+firebase deploy --only firestore:rules --project mabar-slurd
 ```
 
-### Seed akun & data demo
+Atau manual: Console → Firestore Database → tab **Rules** →
+paste isi [firestore.rules](firestore.rules) → **Publish**
 
-Butuh Node.js. Membuat 1 gamer + 3 admin beserta warnet & 15 unit perangkat tiap warnet:
+### 2. Firebase Storage
+
+> **Catatan:** Storage membutuhkan **Blaze plan** (pay-as-you-go).
+> Project ini menggunakan Spark plan (gratis), sehingga fitur **upload foto baru**
+> (dari admin & edit profil) tidak aktif.
+> Foto venue tampil normal via URL Unsplash yang sudah di-seed.
+
+Jika ingin mengaktifkan upload foto: upgrade project ke Blaze → aktifkan Storage →
+deploy `storage.rules` via CLI:
+
+```bash
+firebase deploy --only storage --project mabar-slurd
+```
+
+### 3. Seed akun & data demo
+
+Butuh Node.js. Membuat 1 gamer + 3 admin beserta warnet & 15 unit perangkat tiap warnet
+(idempotent — aman dijalankan berulang):
 
 ```bash
 node tool/seed_accounts.mjs
 ```
 
-> Catatan: penulisan dokumen `users`/`computers`/`reviews` & upload foto hanya berhasil
-> setelah rules di-deploy. Sebelum itu, deteksi admin tetap jalan via fallback kepemilikan venue.
+> Rules Firestore harus sudah di-deploy sebelum menjalankan seed agar role dan
+> data perangkat berhasil tersimpan.
 
 ---
 
