@@ -368,11 +368,11 @@ const VENUE_REVIEWS = {
       );
     }
 
-    // Booking aktif hari ini: mulai 2 jam dari sekarang, 3 jam
+    // Booking aktif hari ini (Rizky): mulai 2 jam dari sekarang, 3 jam
     const nowPlus2h = new Date(Date.now() + 2 * 3600000);
     nowPlus2h.setMinutes(0, 0, 0);
     const activeEnd = new Date(nowPlus2h.getTime() + 3 * 3600000);
-    const activeAcc = dummyAccounts[0]; // Rizky Pratama booking aktif
+    const activeAcc = dummyAccounts[0];
     if (activeAcc) {
       await tryStep(
         `booking aktif ${activeAcc.name} @ ${venueName}`,
@@ -384,7 +384,7 @@ const VENUE_REVIEWS = {
       );
     }
 
-    // Booking besok: user gamer utama
+    // Booking besok: gamer utama (Berlangsung)
     const tomorrow = new Date(Date.now() + 86400000);
     tomorrow.setHours(19, 0, 0, 0);
     const tomorrowEnd = new Date(tomorrow.getTime() + 2 * 3600000);
@@ -394,6 +394,35 @@ const VENUE_REVIEWS = {
         gamer.idToken, gamer.uid, id, venueName,
         'PC-09', tomorrow.toISOString(), tomorrowEnd.toISOString(),
         2, 30, 'QRIS',
+      ),
+    );
+
+    // Booking lama (Selesai) — gamer utama, 7 hari lalu
+    const pastStart = new Date(Date.now() - 86400000 * 7);
+    pastStart.setHours(15, 0, 0, 0);
+    const pastEnd = new Date(pastStart.getTime() + 3 * 3600000);
+    await tryStep(
+      `booking selesai gamer @ ${venueName}`,
+      () => _createBooking(
+        gamer.idToken, gamer.uid, id, venueName,
+        'PC-03', pastStart.toISOString(), pastEnd.toISOString(),
+        3, 45, 'Bayar di Tempat', 'done',
+      ),
+    );
+  }
+
+  // Satu booking dibatalkan untuk gamer (GG Arena, 2 hari lalu)
+  const firstVenue = Object.values(venueMap)[0];
+  if (firstVenue) {
+    const cancelStart = new Date(Date.now() - 86400000 * 2);
+    cancelStart.setHours(10, 0, 0, 0);
+    const cancelEnd = new Date(cancelStart.getTime() + 2 * 3600000);
+    await tryStep(
+      'booking dibatalkan gamer @ GG Arena',
+      () => _createBooking(
+        gamer.idToken, gamer.uid, firstVenue.id, 'GG Arena Demo',
+        'PC-02', cancelStart.toISOString(), cancelEnd.toISOString(),
+        2, 30, 'OVO', 'cancelled',
       ),
     );
   }
