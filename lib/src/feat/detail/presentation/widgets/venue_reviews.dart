@@ -19,6 +19,7 @@ class VenueReviews extends StatefulWidget {
 class _VenueReviewsState extends State<VenueReviews> {
   List<Map<String, dynamic>> _reviews = [];
   bool _loading = true;
+  bool _hasBooked = false;
 
   @override
   void initState() {
@@ -27,10 +28,14 @@ class _VenueReviewsState extends State<VenueReviews> {
   }
 
   Future<void> _load() async {
-    final list = await FirestoreService.getVenueReviews(widget.venueId);
+    final results = await Future.wait([
+      FirestoreService.getVenueReviews(widget.venueId),
+      FirestoreService.hasUserBooked(widget.venueId),
+    ]);
     if (!mounted) return;
     setState(() {
-      _reviews = list;
+      _reviews = results[0] as List<Map<String, dynamic>>;
+      _hasBooked = results[1] as bool;
       _loading = false;
     });
   }
@@ -89,28 +94,51 @@ class _VenueReviewsState extends State<VenueReviews> {
         else
           ..._reviews.take(5).map(_reviewTile),
         const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: CustomColors.mabarBorderFocus),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+        if (_hasBooked)
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: CustomColors.mabarBorderFocus),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: _openWriteSheet,
+              icon: const Icon(Icons.rate_review_outlined,
+                  color: CustomColors.mabarBorderFocus, size: 18),
+              label: const Text(
+                'Tulis Ulasan',
+                style: TextStyle(
+                  color: CustomColors.mabarBorderFocus,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            onPressed: _openWriteSheet,
-            icon: const Icon(Icons.rate_review_outlined,
-                color: CustomColors.mabarBorderFocus, size: 18),
-            label: const Text(
-              'Tulis Ulasan',
-              style: TextStyle(
-                color: CustomColors.mabarBorderFocus,
-                fontWeight: FontWeight.bold,
-              ),
+          )
+        else if (!_loading)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: CustomColors.mabarSurfaceCard,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock_outline,
+                    size: 15, color: CustomColors.mabarTextTertiary),
+                SizedBox(width: 8),
+                Text(
+                  'Booking dulu untuk bisa memberi ulasan',
+                  style: TextStyle(
+                      color: CustomColors.mabarTextTertiary, fontSize: 12),
+                ),
+              ],
             ),
           ),
-        ),
       ],
     );
   }
