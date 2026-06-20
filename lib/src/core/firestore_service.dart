@@ -519,6 +519,19 @@ class FirestoreService {
     }
   }
 
+  /// Cek apakah user yang login pernah booking di venue ini (untuk gate review).
+  static Future<bool> hasUserBooked(String venueId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    final snap = await _db
+        .collection('bookings')
+        .where('venue_id', isEqualTo: venueId)
+        .where('user_id', isEqualTo: user.uid)
+        .limit(1)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
   // ── Ulasan (rating + komentar) per-venue ──────────────────────────────────
   // Disimpan di subcollection venues/{venueId}/reviews.
 

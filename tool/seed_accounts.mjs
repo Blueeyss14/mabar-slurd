@@ -192,19 +192,119 @@ async function seedComputers(idToken, path) {
   return `${DEFAULT_COMPUTERS.length} unit ditambahkan`;
 }
 
+// ── Helpers untuk booking & review dummy ─────────────────────────────────────
+
+async function bookingExists(idToken, venueId, userId) {
+  const res = await fetch(`${FS}:runQuery`, { method: 'POST',
+    headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: 'bookings' }],
+      where: { compositeFilter: { op: 'AND', filters: [
+        { fieldFilter: { field: { fieldPath: 'venue_id' }, op: 'EQUAL', value: { stringValue: venueId } } },
+        { fieldFilter: { field: { fieldPath: 'user_id' }, op: 'EQUAL', value: { stringValue: userId } } },
+      ]}},
+      limit: 1,
+    }}) });
+  const d = await res.json();
+  return (d || []).some((x) => x.document);
+}
+
+async function addBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method) {
+  const already = await bookingExists(idToken, venueId, userId);
+  if (already) return 'sudah ada, skip';
+  const res = await fetch(`${FS}/bookings`, { method: 'POST',
+    headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ fields: {
+      venue_id:       { stringValue: venueId },
+      venue_name:     { stringValue: venueName },
+      user_id:        { stringValue: userId },
+      computer_id:    { stringValue: computerId },
+      device_type:    { stringValue: 'Gaming' },
+      start_time:     { timestampValue: startIso },
+      end_time:       { timestampValue: endIso },
+      duration_hours: { integerValue: String(hours) },
+      total_price:    { integerValue: String(price) },
+      payment_method: { stringValue: method },
+      payment_status: { stringValue: 'paid' },
+      status:         { stringValue: 'done' },
+    }}) });
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.status || d.error.message);
+  return d.name.split('/').pop();
+}
+
+async function reviewExists(idToken, venuePath, userId) {
+  const res = await fetch(`${FS}:runQuery`, { method: 'POST',
+    headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: 'reviews', allDescendants: false }],
+      where: { fieldFilter: { field: { fieldPath: 'user_id' }, op: 'EQUAL', value: { stringValue: userId } } },
+      limit: 1,
+    }}) });
+  // query hanya di subcollection venue tertentu perlu parent path — pakai list
+  const listRes = await fetch(`https://firestore.googleapis.com/v1/${venuePath}/reviews`, {
+    headers: { ...H, Authorization: `Bearer ${idToken}` } });
+  const listD = await listRes.json();
+  return (listD.documents || []).some((d) => d.fields?.user_id?.stringValue === userId);
+}
+
+async function addReview(idToken, venuePath, userId, userName, rating, comment) {
+  const already = await reviewExists(idToken, venuePath, userId);
+  if (already) return 'sudah ada, skip';
+  const res = await fetch(`https://firestore.googleapis.com/v1/${venuePath}/reviews`, {
+    method: 'POST', headers: { ...H, Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ fields: {
+      user_id:    { stringValue: userId },
+      user_name:  { stringValue: userName },
+      rating:     { integerValue: String(rating) },
+      comment:    { stringValue: comment },
+      created_at: { timestampValue: new Date(Date.now() - 86400000 * Math.floor(Math.random() * 10 + 1)).toISOString() },
+    }}) });
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.status || d.error.message);
+  return 'OK';
+}
+
+// Dummy users + riwayat booking + ulasan mereka
+const DUMMY_USERS = [
+  { email: 'gamer2@mabarkeun.com', pass: 'Gamer123', name: 'Rizky Pratama' },
+  { email: 'gamer3@mabarkeun.com', pass: 'Gamer123', name: 'Budi Santoso' },
+  { email: 'gamer4@mabarkeun.com', pass: 'Gamer123', name: 'Siti Aulia' },
+];
+
+// Ulasan per venue: [rating, komentar, nama user (akan diisi dari DUMMY_USERS index)]
+const VENUE_REVIEWS = {
+  'GG Arena Demo': [
+    [5, 'PC-nya kenceng banget, nyaman main di sini! Recommended buat gaming marathon.', 0],
+    [4, 'Tempatnya bersih dan sejuk, harganya worth it.', 1],
+    [5, 'Koneksi stabil, staff ramah. Bakal balik lagi!', 2],
+  ],
+  'Nexus Esports': [
+    [5, 'Spek PC-nya tinggi, cocok banget buat esport. Kursinya juga enak.', 0],
+    [4, 'Lumayan, tempatnya agak rame tapi tetap nyaman.', 2],
+  ],
+  'CyberShop Hub': [
+    [5, '24 jam mantap! Sering main malem di sini, aman dan nyaman.', 1],
+    [4, 'PS5-nya keren, gamenya banyak dan lengkap.', 0],
+    [5, 'Recommended banget buat nge-warnet sama temen-temen!', 2],
+  ],
+};
+
 (async () => {
+  // ── Akun gamer utama ──────────────────────────────────────────────────────
   console.log('GAMER (gamer@mabarkeun.com / Gamer123)');
   const gamer = await ensureAccount('gamer@mabarkeun.com', 'Gamer123', 'Gamer Demo');
   console.log(`  auth OK uid=${gamer.uid}`);
   await tryStep('set role=user', () => setUserRole(gamer.idToken, gamer.uid, 'user', 'Gamer Demo'));
 
+  // ── Admin + venue ─────────────────────────────────────────────────────────
+  const venueMap = {}; // name -> { path, id }
   for (const a of ADMINS) {
     console.log(`\nADMIN ${a.email} / ${a.pass}  ->  ${a.venue.name}`);
     const adm = await ensureAccount(a.email, a.pass, a.name);
     console.log(`  auth OK uid=${adm.uid}`);
     await tryStep('set role=admin', () => setUserRole(adm.idToken, adm.uid, 'admin', a.name));
 
-    // Cari venue milik admin ini dengan nama yang cocok; patch atau buat baru.
     let venues = await myVenues(adm.idToken, adm.uid);
     let target = venues.find((x) => x.fields?.name?.stringValue === a.venue.name);
     if (target) {
@@ -215,6 +315,48 @@ async function seedComputers(idToken, path) {
     }
     if (target) {
       await tryStep('seed 15 perangkat + spek', () => seedComputers(adm.idToken, target.path));
+      const venueId = target.path.split('/').pop();
+      venueMap[a.venue.name] = { path: target.path, id: venueId };
+    }
+  }
+
+  // ── Dummy users + booking lama + ulasan ───────────────────────────────────
+  console.log('\n── Dummy Users + Booking + Ulasan ──');
+  const dummyAccounts = [];
+  for (const u of DUMMY_USERS) {
+    console.log(`\nUSER ${u.email}`);
+    const acc = await ensureAccount(u.email, u.pass, u.name);
+    console.log(`  auth OK uid=${acc.uid}`);
+    await tryStep('set role=user', () => setUserRole(acc.idToken, acc.uid, 'user', u.name));
+    dummyAccounts.push({ ...acc, name: u.name });
+  }
+
+  // Untuk setiap venue, seed booking lama (sudah selesai) + ulasan dari dummy users
+  const venueEntries = Object.entries(venueMap);
+  for (const [venueName, { path, id }] of venueEntries) {
+    const reviews = VENUE_REVIEWS[venueName] || [];
+    for (const [rating, comment, userIdx] of reviews) {
+      const acc = dummyAccounts[userIdx];
+      if (!acc) continue;
+
+      // Booking lama: 3 hari lalu, 2 jam
+      const start = new Date(Date.now() - 86400000 * (3 + userIdx));
+      start.setHours(14, 0, 0, 0);
+      const end = new Date(start.getTime() + 2 * 3600000);
+
+      await tryStep(
+        `booking lama ${acc.name} @ ${venueName}`,
+        () => addBooking(
+          acc.idToken, acc.uid, id, venueName,
+          'PC-05', start.toISOString(), end.toISOString(),
+          2, 30, 'Bayar di Tempat',
+        ),
+      );
+
+      await tryStep(
+        `ulasan ${acc.name} @ ${venueName} (${rating}★)`,
+        () => addReview(acc.idToken, path, acc.uid, acc.name, rating, comment),
+      );
     }
   }
 
