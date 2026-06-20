@@ -30,18 +30,28 @@ panel admin per-warnet. Dibangun dengan **Flutter + Firebase**.
 
 Login dengan akun di bawah (sudah di-seed ke project `mabar-slurd`):
 
-| Role | Email | Password | Warnet |
-|------|-------|----------|--------|
-| Gamer | `gamer@mabarkeun.com` | `Gamer123` | — |
-| Admin 1 | `admin@mabarkeun.com` | `Admin123` | GG Arena Demo |
-| Admin 2 | `admin2@mabarkeun.com` | `Admin123` | Nexus Esports |
-| Admin 3 | `admin3@mabarkeun.com` | `Admin123` | CyberShop Hub |
+| Role | Email | Password | Keterangan |
+|------|-------|----------|------------|
+| Gamer | `gamer@mabarkeun.com` | `Gamer123` | Booking besok di tiap warnet (status: Berlangsung) |
+| Admin 1 | `admin@mabarkeun.com` | `Admin123` | Pemilik GG Arena Demo |
+| Admin 2 | `admin2@mabarkeun.com` | `Admin123` | Pemilik Nexus Esports |
+| Admin 3 | `admin3@mabarkeun.com` | `Admin123` | Pemilik CyberShop Hub |
+| User 1 | `gamer2@mabarkeun.com` | `Gamer123` | Rizky Pratama — punya booking selesai + ulasan |
+| User 2 | `gamer3@mabarkeun.com` | `Gamer123` | Budi Santoso — punya booking selesai + ulasan |
+| User 3 | `gamer4@mabarkeun.com` | `Gamer123` | Siti Aulia — punya booking selesai + ulasan |
 
 Tiap warnet di beranda dimiliki salah satu admin, lengkap dengan foto, jam buka, fasilitas,
-lokasi, harga, dan unit perangkat — semuanya bisa diedit admin masing-masing.
+lokasi (Jakarta area), harga, dan 15 unit perangkat — semuanya bisa diedit admin masing-masing.
 
-**Alur coba:** login admin → kelola warnet → logout → login gamer → booking → logout →
-login admin pemilik → booking muncul di dashboard, tekan **Tandai Selesai**.
+**Dummy data yang sudah di-seed:**
+- 8 ulasan nyata tersebar di 3 venue (rating 4–5★)
+- Booking selesai (done) untuk gamer2/3/4 di semua venue → bisa langsung "Beri Ulasan"
+- Booking aktif hari ini (Rizky) + booking besok (gamer) → tampil di dashboard admin & riwayat
+
+**Alur coba lengkap:**
+1. Login admin → lihat dashboard booking masuk, statistik, tandai selesai
+2. Login gamer → booking baru → pilih metode pembayaran → simulasi pembayaran
+3. Login gamer2/3/4 → riwayat ada booking selesai → tekan "Beri Ulasan"
 
 > Bisa juga daftar akun baru lewat tombol **Daftar** (pilih tipe **Gamer** / **Admin Warnet**).
 

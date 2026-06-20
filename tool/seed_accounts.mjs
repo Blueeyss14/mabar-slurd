@@ -209,9 +209,7 @@ async function bookingExists(idToken, venueId, userId) {
   return (d || []).some((x) => x.document);
 }
 
-async function addBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method) {
-  const already = await bookingExists(idToken, venueId, userId);
-  if (already) return 'sudah ada, skip';
+async function _createBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method, status) {
   const res = await fetch(`${FS}/bookings`, { method: 'POST',
     headers: { ...H, Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ fields: {
@@ -226,11 +224,22 @@ async function addBooking(idToken, userId, venueId, venueName, computerId, start
       total_price:    { integerValue: String(price) },
       payment_method: { stringValue: method },
       payment_status: { stringValue: 'paid' },
-      status:         { stringValue: 'done' },
+      status:         { stringValue: status },
     }}) });
   const d = await res.json();
   if (d.error) throw new Error(d.error.status || d.error.message);
   return d.name.split('/').pop();
+}
+
+async function addBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method) {
+  const already = await bookingExists(idToken, venueId, userId);
+  if (already) return 'sudah ada, skip';
+  return _createBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method, 'done');
+}
+
+async function addBookingActive(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method) {
+  // Booking aktif boleh lebih dari satu (berbeda venue/waktu), cukup cek duplikat per waktu
+  return _createBooking(idToken, userId, venueId, venueName, computerId, startIso, endIso, hours, price, method, 'active');
 }
 
 async function reviewExists(idToken, venuePath, userId) {
@@ -331,7 +340,7 @@ const VENUE_REVIEWS = {
     dummyAccounts.push({ ...acc, name: u.name });
   }
 
-  // Untuk setiap venue, seed booking lama (sudah selesai) + ulasan dari dummy users
+  // Untuk setiap venue, seed booking lama (done) + booking aktif + ulasan
   const venueEntries = Object.entries(venueMap);
   for (const [venueName, { path, id }] of venueEntries) {
     const reviews = VENUE_REVIEWS[venueName] || [];
@@ -339,13 +348,13 @@ const VENUE_REVIEWS = {
       const acc = dummyAccounts[userIdx];
       if (!acc) continue;
 
-      // Booking lama: 3 hari lalu, 2 jam
+      // Booking lama: 3-5 hari lalu, 2 jam, sudah done
       const start = new Date(Date.now() - 86400000 * (3 + userIdx));
       start.setHours(14, 0, 0, 0);
       const end = new Date(start.getTime() + 2 * 3600000);
 
       await tryStep(
-        `booking lama ${acc.name} @ ${venueName}`,
+        `booking selesai ${acc.name} @ ${venueName}`,
         () => addBooking(
           acc.idToken, acc.uid, id, venueName,
           'PC-05', start.toISOString(), end.toISOString(),
@@ -358,6 +367,35 @@ const VENUE_REVIEWS = {
         () => addReview(acc.idToken, path, acc.uid, acc.name, rating, comment),
       );
     }
+
+    // Booking aktif hari ini: mulai 2 jam dari sekarang, 3 jam
+    const nowPlus2h = new Date(Date.now() + 2 * 3600000);
+    nowPlus2h.setMinutes(0, 0, 0);
+    const activeEnd = new Date(nowPlus2h.getTime() + 3 * 3600000);
+    const activeAcc = dummyAccounts[0]; // Rizky Pratama booking aktif
+    if (activeAcc) {
+      await tryStep(
+        `booking aktif ${activeAcc.name} @ ${venueName}`,
+        () => addBookingActive(
+          activeAcc.idToken, activeAcc.uid, id, venueName,
+          'PC-07', nowPlus2h.toISOString(), activeEnd.toISOString(),
+          3, 45, 'GoPay',
+        ),
+      );
+    }
+
+    // Booking besok: user gamer utama
+    const tomorrow = new Date(Date.now() + 86400000);
+    tomorrow.setHours(19, 0, 0, 0);
+    const tomorrowEnd = new Date(tomorrow.getTime() + 2 * 3600000);
+    await tryStep(
+      `booking besok gamer @ ${venueName}`,
+      () => addBookingActive(
+        gamer.idToken, gamer.uid, id, venueName,
+        'PC-09', tomorrow.toISOString(), tomorrowEnd.toISOString(),
+        2, 30, 'QRIS',
+      ),
+    );
   }
 
   console.log('\nSelesai. Lihat README untuk daftar akun.');

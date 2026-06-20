@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _query = '';
   double _maxPrice = 100; // Rp 100.000 = praktis tanpa batas
 
-  static const List<String> _sorts = ['Semua', 'Terdekat', 'Populer', 'Rating'];
+  static const List<String> _sorts = ['Semua', 'Terdekat', 'Termurah', 'Populer', 'Rating'];
 
   bool get _filterActive => _sortBy != 'Semua' || _maxPrice < 100;
 
