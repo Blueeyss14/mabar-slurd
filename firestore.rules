@@ -57,6 +57,21 @@ service cloud.firestore {
         allow update, delete: if isSignedIn()
                               && resource.data.user_id == request.auth.uid;
       }
+
+      // Slot-lock per jam (anti-race booking).
+      // id dokumen: {computerId}_{yyyyMMddHH}. Dibaca semua user login (cek
+      // ketersediaan); dibuat/diubah oleh pemilik (user_id sesuai dirinya);
+      // dihapus oleh pemilik booking ATAU admin pemilik venue (tandai selesai).
+      match /slot_locks/{slotId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn()
+                              && request.resource.data.user_id == request.auth.uid;
+        allow delete: if isSignedIn()
+                      && (
+                        resource.data.user_id == request.auth.uid
+                        || venueOwner(venueId) == request.auth.uid
+                      );
+      }
     }
 
     match /bookings/{bookingId} {

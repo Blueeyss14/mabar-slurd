@@ -213,6 +213,12 @@ class _BookingPageState extends State<BookingPage> {
           title: 'Booking Berhasil!',
           body: 'Tempat kamu sudah aman. Cek detailnya di menu Riwayat.',
         );
+        // Pengingat 1 jam sebelum sesi mulai.
+        NotificationService.scheduleBookingReminder(
+          bookingId: bookingId,
+          venueName: widget.venue['name'] as String? ?? 'Warnet',
+          startTime: _startTime!,
+        );
         if (!mounted) return;
         if (_paymentMethod == 'Bayar di Tempat') {
           ScaffoldMessenger.of(context).showSnackBar(

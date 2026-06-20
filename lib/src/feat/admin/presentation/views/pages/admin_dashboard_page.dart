@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mabar_slurd/src/core/firestore_service.dart';
 import 'package:mabar_slurd/src/core/formatters.dart';
+import 'package:mabar_slurd/src/core/notification_service.dart';
 import 'package:mabar_slurd/src/res/custom_colors.dart';
 import 'package:mabar_slurd/src/shared/components/mabar_empty_state.dart';
 
@@ -474,6 +475,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     if (ok != true) return;
     final success = await FirestoreService.markBookingDone(bookingId);
     if (!mounted) return;
+    if (success) {
+      NotificationService.showNotification(
+        title: 'Booking Selesai',
+        body: 'Booking telah ditandai selesai. Slot kembali tersedia.',
+      );
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
