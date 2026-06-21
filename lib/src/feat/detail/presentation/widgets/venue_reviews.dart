@@ -171,7 +171,9 @@ class _VenueReviewsState extends State<VenueReviews> {
                 children: List.generate(
                   5,
                   (i) => Icon(
-                    i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                    i < rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
                     size: 15,
                     color: CustomColors.mabarStar,
                   ),
@@ -212,124 +214,181 @@ class _VenueReviewsState extends State<VenueReviews> {
       return;
     }
 
-    int rating = 5;
-    final commentC = TextEditingController();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheet) => Padding(
-            padding:
-                EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              decoration: const BoxDecoration(
-                color: CustomColors.mabarSurface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: CustomColors.mabarBorderSubtle,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Beri Ulasan',
-                      style: TextStyle(
-                          color: CustomColors.mabarTextPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18)),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (i) {
-                      return IconButton(
-                        onPressed: () => setSheet(() => rating = i + 1),
-                        icon: Icon(
-                          i < rating
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          color: CustomColors.mabarStar,
-                          size: 36,
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: commentC,
-                    maxLines: 3,
-                    style: const TextStyle(color: CustomColors.mabarTextPrimary),
-                    decoration: InputDecoration(
-                      hintText: 'Tulis pengalamanmu (opsional)...',
-                      hintStyle:
-                          const TextStyle(color: CustomColors.mabarTextTertiary),
-                      filled: true,
-                      fillColor: CustomColors.mabarSurfaceInput,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: CustomColors.mabarBorderFocus,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
-                      onPressed: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        final err = await FirestoreService.addReview(
-                          widget.venueId,
-                          rating: rating,
-                          comment: commentC.text,
-                        );
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              err ?? 'Ulasan terkirim. Terima kasih!',
-                              style: const TextStyle(
-                                  color: CustomColors.mabarTextPrimary,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            backgroundColor: err == null
-                                ? CustomColors.mabarPurpleBg
-                                : Colors.red.shade800,
-                          ),
-                        );
-                        if (err == null) _load();
-                      },
-                      child: const Text('Kirim Ulasan',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15)),
-                    ),
-                  ),
-                ],
+      builder: (_) => _ReviewSheet(
+        venueId: widget.venueId,
+        onSubmitted: _load,
+      ),
+    );
+  }
+}
+
+/// Isi bottom sheet "Tulis Ulasan", dipisah jadi StatefulWidget sendiri.
+///
+/// KENAPA DIPISAH (fix bug "TextEditingController was used after disposed"):
+/// Future yang dikembalikan showModalBottomSheet() selesai begitu route
+/// di-pop SECARA LOGIS (sinkron), BUKAN setelah animasi penutupan sheet
+/// benar-benar kelar (animasinya masih jalan ~200-300ms). Kalau controller
+/// di-dispose lewat `.whenComplete()` pada Future itu (cara lama), ada
+/// jendela waktu di mana TextField masih tampil & menerima event
+/// fokus/keyboard-hide, padahal controller-nya sudah dibuang -> exception,
+/// lalu nge-cascade jadi RenderFlex overflow & assertion lain (layar merah).
+///
+/// Dengan controller dikelola lewat State.dispose() di sini, Flutter
+/// dijamin baru manggil dispose() setelah widget ini benar-benar lepas
+/// dari tree (yaitu setelah animasi penutupan selesai), jadi gak akan
+/// kepakai-setelah-dibuang lagi.
+class _ReviewSheet extends StatefulWidget {
+  final String venueId;
+  final VoidCallback onSubmitted;
+
+  const _ReviewSheet({required this.venueId, required this.onSubmitted});
+
+  @override
+  State<_ReviewSheet> createState() => _ReviewSheetState();
+}
+
+class _ReviewSheetState extends State<_ReviewSheet> {
+  int _rating = 5;
+  final _commentC = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _commentC.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    setState(() => _sending = true);
+
+    final err = await FirestoreService.addReview(
+      widget.venueId,
+      rating: _rating,
+      comment: _commentC.text,
+    );
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop();
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          err ?? 'Ulasan terkirim. Terima kasih!',
+          style: const TextStyle(
+              color: CustomColors.mabarTextPrimary,
+              fontWeight: FontWeight.bold),
+        ),
+        backgroundColor:
+            err == null ? CustomColors.mabarPurpleBg : Colors.red.shade800,
+      ),
+    );
+
+    if (err == null) widget.onSubmitted();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        decoration: const BoxDecoration(
+          color: CustomColors.mabarSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: CustomColors.mabarBorderSubtle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-        );
-      },
-    ).whenComplete(commentC.dispose);
+            const SizedBox(height: 16),
+            const Text('Beri Ulasan',
+                style: TextStyle(
+                    color: CustomColors.mabarTextPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18)),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (i) {
+                return IconButton(
+                  onPressed:
+                      _sending ? null : () => setState(() => _rating = i + 1),
+                  icon: Icon(
+                    i < _rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    color: CustomColors.mabarStar,
+                    size: 36,
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _commentC,
+              enabled: !_sending,
+              maxLines: 3,
+              style: const TextStyle(color: CustomColors.mabarTextPrimary),
+              decoration: InputDecoration(
+                hintText: 'Tulis pengalamanmu (opsional)...',
+                hintStyle:
+                    const TextStyle(color: CustomColors.mabarTextTertiary),
+                filled: true,
+                fillColor: CustomColors.mabarSurfaceInput,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: CustomColors.mabarBorderFocus,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: _sending ? null : _submit,
+                child: _sending
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Kirim Ulasan',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
